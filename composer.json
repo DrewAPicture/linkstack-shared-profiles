@@ -10,13 +10,13 @@
   },
   "autoload": {
     "psr-4": {
-      "WerdsWords\\LinkStackSharedProfiles\\": "src/"
+      "WerdsWords\\LinkStack\\SharedProfiles\\": "src/"
     }
   },
   "extra": {
     "laravel": {
       "providers": [
-        "WerdsWords\\LinkStackSharedProfiles\\LinkStackSharedProfilesServiceProvider"
+        "WerdsWords\\LinkStack\\SharedProfiles\\LinkStackSharedProfilesServiceProvider"
       ]
     }
   }
