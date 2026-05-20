@@ -23,8 +23,8 @@ final class ServiceProviderTest extends TestCase
 
     private function loadedConfig(): Repository
     {
-        $app = new Container();
-        $config = new Repository();
+        $app = new Container;
+        $config = new Repository;
         $app->instance('config', $config);
 
         (new ServiceProvider($app))->register();

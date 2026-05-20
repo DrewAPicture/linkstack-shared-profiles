@@ -25,7 +25,7 @@ class ServiceProvider extends BaseServiceProvider
 
         $this->publishes([
             __DIR__.'/../config/linkstack-shared-profiles.php' => config_path('linkstack-shared-profiles.php'),
-            __DIR__.'/../database/migrations'                   => database_path('migrations'),
+            __DIR__.'/../database/migrations' => database_path('migrations'),
         ], 'linkstack-shared-profiles');
 
         // UserController::littlelink() uses DB::table() not Eloquent, so a global
@@ -34,7 +34,7 @@ class ServiceProvider extends BaseServiceProvider
         View::composer('linkstack.linkstack', function ($view) {
             $links = collect($view->getData()['links'] ?? []);
             $view->with('links', $links->filter(
-                fn ($link) => !isset($link->status) || $link->status === 'published'
+                fn ($link) => ! isset($link->status) || $link->status === 'published'
             ));
         });
 
