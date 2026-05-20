@@ -1,0 +1,19 @@
+# Dependencies
+vendor/
+
+# Tool caches
+.phpunit.cache
+phpstan.cache
+
+# IDEs and editors
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+
+# Temp files
+*.diff
+*.log
