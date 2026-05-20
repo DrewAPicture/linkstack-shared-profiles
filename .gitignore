@@ -3,6 +3,7 @@ vendor/
 
 # Tool caches
 .phpunit.cache
+.phpunit.result.cache
 phpstan.cache
 
 # IDEs and editors

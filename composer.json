@@ -13,10 +13,15 @@
       "WerdsWords\\LinkStack\\SharedProfiles\\": "src/"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "WerdsWords\\LinkStack\\SharedProfiles\\Tests\\": "tests/"
+    }
+  },
   "extra": {
     "laravel": {
       "providers": [
-        "WerdsWords\\LinkStack\\SharedProfiles\\LinkStackSharedProfilesServiceProvider"
+        "WerdsWords\\LinkStack\\SharedProfiles\\ServiceProvider"
       ]
     }
   },

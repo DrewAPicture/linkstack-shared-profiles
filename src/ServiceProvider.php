@@ -3,11 +3,11 @@
 namespace WerdsWords\LinkStack\SharedProfiles;
 
 use Illuminate\Support\Facades\View;
-use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 use Laravel\Socialite\Contracts\Factory as Socialite;
 use SocialiteProviders\Telegram\Provider as TelegramProvider;
 
-class LinkStackSharedProfilesServiceProvider extends ServiceProvider
+class ServiceProvider extends BaseServiceProvider
 {
     public function register(): void
     {
