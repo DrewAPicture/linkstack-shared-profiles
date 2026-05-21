@@ -27,11 +27,13 @@ Auto-discovery registers the service provider. No changes to `config/app.php` ar
 
 ---
 
-## Feature 1 — API Link Submission
+## Features
+
+### API Link Submission
 
 Any external tool can submit links to a profile by POSTing to `/api/links` with a bearer token.
 
-### Setting an API token
+#### Setting an API token
 
 Generate a token for a profile via Artisan tinker:
 
@@ -40,7 +42,7 @@ php artisan tinker
 >>> \App\Models\User::find($profileId)->update(['api_token' => \Illuminate\Support\Str::random(80)]);
 ```
 
-### Listing pending links
+#### Listing pending links
 
 ```
 GET /api/links
@@ -64,7 +66,7 @@ Returns pending links for the authenticated profile:
 }
 ```
 
-### Approving a link
+#### Approving a link
 
 ```
 POST /api/links/{id}/approve
@@ -73,7 +75,7 @@ Authorization: Bearer <api_token>
 
 Sets the link's status to `published`. Returns `404` if the link is not found, not in `pending` status, or belongs to a different profile.
 
-### Denying a link
+#### Denying a link
 
 ```
 DELETE /api/links/{id}
@@ -82,7 +84,7 @@ Authorization: Bearer <api_token>
 
 Permanently deletes the link. Returns `404` if the link is not found, not in `pending` status, or belongs to a different profile. LinkStack does not support soft deletes on links.
 
-### Submitting a link
+#### Submitting a link
 
 ```
 POST /api/links
@@ -117,13 +119,11 @@ The per-profile value takes precedence over the global config when set. Setting 
 
 **Response:** `201 Created` with `{"status": "queued"}`.
 
----
-
-## Feature 2 — Telegram Multi-User Management
+### Telegram Multi-User Management
 
 Multiple Telegram users can log in and be redirected to a shared LinkStack profile. Two authentication flows are supported.
 
-### Bot token configuration
+#### Bot token configuration
 
 Each profile can have its own bot token stored in the database. If no per-profile token is set, the package falls back to the global `TELEGRAM_BOT_TOKEN` environment variable.
 
@@ -140,7 +140,7 @@ Or set the global fallback in `.env`:
 TELEGRAM_BOT_TOKEN=your-bot-token
 ```
 
-### Adding Telegram managers
+#### Adding Telegram managers
 
 A Telegram manager is a Telegram user who is permitted to log in as a given profile. Add one via tinker:
 
@@ -153,7 +153,7 @@ php artisan tinker
 ... ]);
 ```
 
-### Approach A — Telegram Login Widget (browser-based)
+#### Approach A — Telegram Login Widget (browser-based)
 
 Direct users to:
 
@@ -173,7 +173,7 @@ Configure your Telegram bot to allow the Login Widget for your domain, then set 
 ],
 ```
 
-### Approach B — Telegram Mini App (initData)
+#### Approach B — Telegram Mini App (initData)
 
 A Telegram Mini App can authenticate by posting `Telegram.WebApp.initData` directly:
 
@@ -196,9 +196,7 @@ The controller verifies the HMAC signature and checks that the `auth_date` is wi
 
 The Mini App should then navigate to the returned URL.
 
----
-
-## Feature 3 — Link Moderation Queue
+### Link Moderation Queue
 
 Authenticated profile users can review pending links at:
 
@@ -208,7 +206,7 @@ Authenticated profile users can review pending links at:
 
 Approve or reject individual links from there. Only links belonging to the authenticated user are shown.
 
-### Customising the view
+#### Customising the view
 
 Publish the view to override the default layout:
 
