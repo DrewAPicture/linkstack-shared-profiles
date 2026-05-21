@@ -20,11 +20,13 @@ Auto-discovery via `extra.laravel.providers` in `composer.json` means `composer 
 src/
   ServiceProvider.php
   Http/Controllers/
-    ApiLinkController.php       POST /api/links
-    TelegramAuthController.php  GET /telegram-auth, callback, POST /telegram-login
+    ApiLinkController.php       GET+POST /api/links, approve, deny
+    TelegramAuthController.php  GET /telegram-auth/{profileId}, callback, POST /telegram-login
     ModerationController.php    GET/POST /studio/moderation
   Models/
     TelegramManager.php
+  Services/
+    TelegramMessagingService.php  sendMessage() — wraps Telegram Bot API HTTP calls
 
 database/migrations/
   2024_01_01_000001_add_api_token_to_users_table.php
@@ -47,6 +49,11 @@ config/
 ## Service Provider
 
 The service provider is the **only** integration point with the host application. Nothing in LinkStack's core files is modified.
+
+| `register()` call | Effect |
+|---|---|
+| `mergeConfigFrom(...)` | Merges package config defaults under `linkstack-shared-profiles` |
+| `singleton(TelegramMessagingService::class, ...)` | Binds the messaging service as a singleton |
 
 | `boot()` call | Effect |
 |---|---|

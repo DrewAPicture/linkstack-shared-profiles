@@ -1,0 +1,106 @@
+<?php
+
+declare(strict_types=1);
+
+namespace WerdsWords\LinkStack\SharedProfiles\Tests\Unit;
+
+use Illuminate\Support\Facades\Http;
+use Laravel\Socialite\SocialiteServiceProvider;
+use Orchestra\Testbench\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use WerdsWords\LinkStack\SharedProfiles\ServiceProvider;
+use WerdsWords\LinkStack\SharedProfiles\Services\TelegramMessagingService;
+
+#[CoversClass(TelegramMessagingService::class)]
+final class TelegramMessagingServiceTest extends TestCase
+{
+    protected function getPackageProviders($app): array
+    {
+        return [
+            SocialiteServiceProvider::class,
+            ServiceProvider::class,
+        ];
+    }
+
+    protected function defineEnvironment($app): void
+    {
+        $app['config']->set('services.telegram.client_id', 'test-bot-id');
+        $app['config']->set('services.telegram.client_secret', 'test-secret');
+        $app['config']->set('services.telegram.redirect', 'https://example.com/callback');
+    }
+
+    // -------------------------------------------------------------------------
+    // Container binding
+    // -------------------------------------------------------------------------
+
+    public function testServiceIsResolvableFromContainer(): void
+    {
+        $this->assertInstanceOf(TelegramMessagingService::class, app(TelegramMessagingService::class));
+    }
+
+    public function testServiceIsBoundAsSingleton(): void
+    {
+        $a = app(TelegramMessagingService::class);
+        $b = app(TelegramMessagingService::class);
+
+        $this->assertSame($a, $b);
+    }
+
+    // -------------------------------------------------------------------------
+    // sendMessage()
+    // -------------------------------------------------------------------------
+
+    public function testSendMessagePostsToCorrectTelegramApiUrl(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true], 200)]);
+
+        $service = new TelegramMessagingService;
+        $service->sendMessage('my-bot-token', '12345678', 'Hello!');
+
+        Http::assertSent(
+            fn ($request) => $request->url() === 'https://api.telegram.org/botmy-bot-token/sendMessage'
+        );
+    }
+
+    public function testSendMessageIncludesChatIdAndText(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true], 200)]);
+
+        $service = new TelegramMessagingService;
+        $service->sendMessage('my-bot-token', '12345678', 'Hello!');
+
+        Http::assertSent(
+            fn ($request) => $request['chat_id'] === '12345678' && $request['text'] === 'Hello!'
+        );
+    }
+
+    public function testSendMessageReturnsTrueOnSuccess(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true], 200)]);
+
+        $service = new TelegramMessagingService;
+        $result = $service->sendMessage('my-bot-token', '12345678', 'Hello!');
+
+        $this->assertTrue($result);
+    }
+
+    public function testSendMessageReturnsFalseOnApiError(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => false, 'description' => 'Bad Request'], 400)]);
+
+        $service = new TelegramMessagingService;
+        $result = $service->sendMessage('my-bot-token', '12345678', 'Hello!');
+
+        $this->assertFalse($result);
+    }
+
+    public function testSendMessageReturnsFalseOnServerError(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response([], 500)]);
+
+        $service = new TelegramMessagingService;
+        $result = $service->sendMessage('my-bot-token', '12345678', 'Hello!');
+
+        $this->assertFalse($result);
+    }
+}

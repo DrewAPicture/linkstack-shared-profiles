@@ -12,6 +12,7 @@ use PHPUnit\Framework\Attributes\CoversMethod;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use WerdsWords\LinkStack\SharedProfiles\ServiceProvider;
+use WerdsWords\LinkStack\SharedProfiles\Services\TelegramMessagingService;
 
 #[CoversClass(ServiceProvider::class)]
 #[CoversMethod(ServiceProvider::class, 'register')]
@@ -87,6 +88,17 @@ final class ServiceProviderTest extends TestCase
         $config = $this->loadedConfig();
 
         $this->assertTrue($config->has('linkstack-shared-profiles'));
+    }
+
+    public function testRegisterBindsTelegramMessagingService(): void
+    {
+        $app = new Container;
+        $config = new Repository;
+        $app->instance('config', $config);
+
+        (new ServiceProvider($app))->register();
+
+        $this->assertTrue($app->bound(TelegramMessagingService::class));
     }
 
     #[DataProvider('provideConfigKeys')]

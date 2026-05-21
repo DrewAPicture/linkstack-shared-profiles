@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 use Laravel\Socialite\Contracts\Factory as Socialite;
 use SocialiteProviders\Telegram\Provider as TelegramProvider;
+use WerdsWords\LinkStack\SharedProfiles\Services\TelegramMessagingService;
 
 class ServiceProvider extends BaseServiceProvider
 {
@@ -14,6 +15,8 @@ class ServiceProvider extends BaseServiceProvider
         $this->mergeConfigFrom(
             __DIR__.'/../config/linkstack-shared-profiles.php', 'linkstack-shared-profiles'
         );
+
+        $this->app->singleton(TelegramMessagingService::class, fn () => new TelegramMessagingService);
     }
 
     public function boot(): void
