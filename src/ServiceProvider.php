@@ -23,10 +23,16 @@ class ServiceProvider extends BaseServiceProvider
 
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'linkstack-shared-profiles');
+
         $this->publishes([
             __DIR__.'/../config/linkstack-shared-profiles.php' => config_path('linkstack-shared-profiles.php'),
             __DIR__.'/../database/migrations' => database_path('migrations'),
         ], 'linkstack-shared-profiles');
+
+        $this->publishes([
+            __DIR__.'/../resources/views' => resource_path('views/vendor/linkstack-shared-profiles'),
+        ], 'linkstack-shared-profiles-views');
 
         // UserController::littlelink() uses DB::table() not Eloquent, so a global
         // scope cannot intercept it. This view composer fires just before the Blade
