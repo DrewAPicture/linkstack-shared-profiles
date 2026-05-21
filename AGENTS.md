@@ -43,3 +43,4 @@ See [`.agent/context/architecture.md`](.agent/context/architecture.md) for the f
 - [Git Safety Protocol](.agent/context/best-practices/git-safety-protocol.md) — check working tree, no force push, commit scope
 - [Accessibility](.agent/context/best-practices/accessibility.md) — WCAG 2.2 Level AA for all rendered views
 - [GitHub Actions](.agent/context/best-practices/github-actions.md) — pin actions to SHAs, keep secrets out of workflow files
+- [PHP Imports](.agent/context/best-practices/php-imports.md) — always `use`-import classes; no leading backslashes inline

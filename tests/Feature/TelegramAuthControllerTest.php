@@ -14,6 +14,7 @@ use Laravel\Socialite\SocialiteServiceProvider;
 use Mockery;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
+use SensitiveParameter;
 use WerdsWords\LinkStack\SharedProfiles\Http\Controllers\TelegramAuthController;
 use WerdsWords\LinkStack\SharedProfiles\ServiceProvider;
 use WerdsWords\LinkStack\SharedProfiles\Tests\Support\Models\User;
@@ -113,7 +114,7 @@ final class TelegramAuthControllerTest extends TestCase
     /**
      * Build a properly HMAC-signed initData string matching Telegram's Mini App spec.
      */
-    private function buildValidInitData(int|string $telegramId, int $authDate = 0, #[\SensitiveParameter] string $signingToken = self::BOT_TOKEN): string
+    private function buildValidInitData(int|string $telegramId, int $authDate = 0, #[SensitiveParameter] string $signingToken = self::BOT_TOKEN): string
     {
         if ($authDate === 0) {
             $authDate = time();
