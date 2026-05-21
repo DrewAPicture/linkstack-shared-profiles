@@ -38,8 +38,7 @@ Any external tool can submit links to a profile by POSTing to `/api/links` with 
 Generate a token for a profile via Artisan tinker:
 
 ```bash
-php artisan tinker
->>> \App\Models\User::find($profileId)->update(['api_token' => \Illuminate\Support\Str::random(80)]);
+\App\Models\User::find($profileId)->update(['api_token' => \Illuminate\Support\Str::random(80)]);
 ```
 
 #### Listing pending links
@@ -111,8 +110,7 @@ Content-Type: application/json
 Submitted links arrive with `status = pending` unless auto-approve is enabled. This can be set globally via `LINKSTACK_SHARED_PROFILES_AUTO_APPROVE=true`, or on a per-profile basis:
 
 ```bash
-php artisan tinker
->>> \App\Models\User::find($profileId)->update(['auto_approve' => true]);
+\App\Models\User::find($profileId)->update(['auto_approve' => true]);
 ```
 
 The per-profile value takes precedence over the global config when set. Setting it to `false` will queue links even if the global config enables auto-approve.
@@ -130,8 +128,7 @@ Each profile can have its own bot token stored in the database. If no per-profil
 Set a per-profile token via tinker:
 
 ```bash
-php artisan tinker
->>> \App\Models\User::find($profileId)->update(['telegram_bot_token' => 'your-bot-token']);
+\App\Models\User::find($profileId)->update(['telegram_bot_token' => 'your-bot-token']);
 ```
 
 Or set the global fallback in `.env`:
@@ -145,8 +142,7 @@ TELEGRAM_BOT_TOKEN=your-bot-token
 A Telegram manager is a Telegram user who is permitted to log in as a given profile. Add one via tinker:
 
 ```bash
-php artisan tinker
->>> \DB::table('telegram_managers')->insert([
+\DB::table('telegram_managers')->insert([
 ...     'telegram_id' => '123456789',   // Telegram user ID (string)
 ...     'profile_id'  => 1,             // users.id of the LinkStack profile
 ...     'role'        => 'moderator',   // 'owner' or 'moderator'
