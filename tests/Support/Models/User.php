@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace WerdsWords\LinkStack\SharedProfiles\Tests\Support\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class User extends Model
+class User extends Authenticatable
 {
     protected $fillable = ['name', 'email', 'api_token'];
 
