@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 
 class ApiLinkController extends Controller
 {
@@ -32,7 +33,8 @@ class ApiLinkController extends Controller
             'meta' => 'sometimes|array',
         ]);
 
-        $user->links()->create([
+        DB::table('links')->insert([
+            'user_id' => $user->getKey(),
             'link' => $validated['link'],
             'title' => $validated['title'],
             'button_id' => $validated['button_id'],
@@ -40,6 +42,8 @@ class ApiLinkController extends Controller
             'type_params' => isset($validated['meta']) ? json_encode($validated['meta']) : null,
             'status' => config('linkstack-shared-profiles.auto_approve') ? 'published' : 'pending',
             'order' => 999,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         return response()->json(['status' => 'queued'], 201);
