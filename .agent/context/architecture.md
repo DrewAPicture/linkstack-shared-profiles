@@ -72,6 +72,7 @@ The filter is additive: if the `status` column doesn't exist yet (migration not 
 | Column | Type | Notes |
 |---|---|---|
 | `api_token` | `string(80)` | Unique, nullable. Used by `POST /api/links` bearer auth. |
+| `telegram_bot_token` | `string` | Nullable. Per-profile bot token for Telegram auth HMAC. Falls back to `linkstack-shared-profiles.bot_token` config when null. |
 
 ### `links` table additions
 
@@ -99,8 +100,8 @@ All package routes use distinct URL prefixes to avoid collision with LinkStack's
 | Method | URL | Middleware | Controller |
 |---|---|---|---|
 | `POST` | `/api/links` | `throttle:60,1` | `ApiLinkController@store` |
-| `GET` | `/telegram-auth` | `web` | `TelegramAuthController@redirect` |
-| `GET` | `/telegram-auth/callback` | `web` | `TelegramAuthController@callback` |
+| `GET` | `/telegram-auth/{profileId}` | `web` | `TelegramAuthController@redirect` |
+| `GET` | `/telegram-auth/{profileId}/callback` | `web` | `TelegramAuthController@callback` |
 | `POST` | `/telegram-login` | `web`, no CSRF | `TelegramAuthController@initDataLogin` |
 | `GET` | `/studio/moderation` | `web`, `auth`, `blocked` | `ModerationController@index` |
 | `POST` | `/studio/moderation/{id}/approve` | `web`, `auth`, `blocked` | `ModerationController@approve` |
@@ -122,8 +123,9 @@ All package routes use distinct URL prefixes to avoid collision with LinkStack's
 
 Two authentication flows share the `telegram_managers` table:
 
-- **Approach A (Socialite):** Browser-based Login Widget via `GET /telegram-auth` → callback. `socialiteproviders/telegram` handles HMAC verification internally.
-- **Approach B (initData):** Telegram Mini App posts `Telegram.WebApp.initData` to `POST /telegram-login`. The controller manually verifies the HMAC per Telegram's Mini App spec and checks `auth_date` freshness.
+- **Approach A (Socialite):** Browser-based Login Widget via `GET /telegram-auth/{profileId}` → `GET /telegram-auth/{profileId}/callback`. The `{profileId}` (a `users.id`) is encoded in the URL so the callback can resolve the per-profile bot token without session state. Before each Socialite call, the controller overrides `services.telegram.client_secret` (the token `socialiteproviders/telegram` uses for HMAC) with the profile's token. Falls back to the global config when `users.telegram_bot_token` is null.
+
+- **Approach B (initData):** Telegram Mini App posts `Telegram.WebApp.initData` to `POST /telegram-login`. The controller resolves the `telegram_id` from the payload, looks up the manager record first (fast-fail on unknown IDs), then fetches the matching per-profile token before running HMAC verification. Falls back to the global config token when the profile has no per-profile token set.
 
 Both flows log in using `Auth::loginUsingId($manager->profile_id)`, establishing a standard Laravel session as the shared profile user. All LinkStack ownership checks (`user_id` equality) pass without modification.
 
