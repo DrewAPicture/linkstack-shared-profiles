@@ -54,6 +54,7 @@ final class ApiLinkControllerTest extends TestCase
             $table->string('name');
             $table->string('email')->unique();
             $table->string('api_token', 80)->unique()->nullable();
+            $table->boolean('auto_approve')->nullable();
             $table->timestamps();
         });
 
@@ -88,14 +89,15 @@ final class ApiLinkControllerTest extends TestCase
     // Helpers
     // -------------------------------------------------------------------------
 
-    private function userWithToken(): array
+    private function userWithToken(?bool $autoApprove = null): array
     {
         $token = Str::random(60);
-        $user = User::create([
+        $user = User::create(array_filter([
             'name' => 'Test User',
             'email' => 'test@example.com',
             'api_token' => $token,
-        ]);
+            'auto_approve' => $autoApprove,
+        ], fn ($v) => $v !== null));
 
         return [$user, $token];
     }
@@ -180,6 +182,36 @@ final class ApiLinkControllerTest extends TestCase
         $this->assertDatabaseHas('links', [
             'user_id' => $user->id,
             'status' => 'published',
+        ]);
+    }
+
+    public function testPerUserAutoApprovePublishesWhenGlobalIsFalse(): void
+    {
+        // global config is false (set in defineEnvironment); per-user is true
+        [$user, $token] = $this->userWithToken(true);
+        $buttonId = $this->buttonId();
+
+        $this->withToken($token)->postJson('/api/links', $this->validPayload($buttonId));
+
+        $this->assertDatabaseHas('links', [
+            'user_id' => $user->id,
+            'status' => 'published',
+        ]);
+    }
+
+    public function testPerUserAutoApproveFalseQueuesWhenGlobalIsTrue(): void
+    {
+        $this->app['config']->set('linkstack-shared-profiles.auto_approve', true);
+
+        // global config is true, but per-user explicitly disables it
+        [$user, $token] = $this->userWithToken(false);
+        $buttonId = $this->buttonId();
+
+        $this->withToken($token)->postJson('/api/links', $this->validPayload($buttonId));
+
+        $this->assertDatabaseHas('links', [
+            'user_id' => $user->id,
+            'status' => 'pending',
         ]);
     }
 

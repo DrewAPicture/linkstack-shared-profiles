@@ -33,6 +33,12 @@ class ApiLinkController extends Controller
             'meta' => 'sometimes|array',
         ]);
 
+        $perUser = DB::table('users')->where('id', $user->getKey())->value('auto_approve');
+        /** @var bool $autoApprove */
+        $autoApprove = $perUser !== null
+            ? $perUser
+            : config('linkstack-shared-profiles.auto_approve');
+
         DB::table('links')->insert([
             'user_id' => $user->getKey(),
             'link' => $validated['link'],
@@ -40,7 +46,7 @@ class ApiLinkController extends Controller
             'button_id' => $validated['button_id'],
             'type' => 'predefined',
             'type_params' => isset($validated['meta']) ? json_encode($validated['meta']) : null,
-            'status' => config('linkstack-shared-profiles.auto_approve') ? 'published' : 'pending',
+            'status' => $autoApprove ? 'published' : 'pending',
             'order' => 999,
             'created_at' => now(),
             'updated_at' => now(),

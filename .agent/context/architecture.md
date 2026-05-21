@@ -73,6 +73,7 @@ The filter is additive: if the `status` column doesn't exist yet (migration not 
 |---|---|---|
 | `api_token` | `string(80)` | Unique, nullable. Used by `POST /api/links` bearer auth. |
 | `telegram_bot_token` | `string` | Nullable. Per-profile bot token for Telegram auth HMAC. Falls back to `linkstack-shared-profiles.bot_token` config when null. |
+| `auto_approve` | `boolean` | Nullable. Per-profile auto-approve override. Falls back to `linkstack-shared-profiles.auto_approve` config when null. |
 
 ### `links` table additions
 

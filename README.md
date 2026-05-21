@@ -64,7 +64,14 @@ Content-Type: application/json
 | `button_id` | Yes | ID of an existing button type |
 | `meta` | No | Arbitrary key/value object stored as JSON in `type_params` |
 
-Submitted links arrive with `status = pending` unless `LINKSTACK_SHARED_PROFILES_AUTO_APPROVE=true` is set.
+Submitted links arrive with `status = pending` unless auto-approve is enabled. This can be set globally via `LINKSTACK_SHARED_PROFILES_AUTO_APPROVE=true`, or on a per-profile basis:
+
+```bash
+php artisan tinker
+>>> \App\Models\User::find($profileId)->update(['auto_approve' => true]);
+```
+
+The per-profile value takes precedence over the global config when set. Setting it to `false` will queue links even if the global config enables auto-approve.
 
 **Response:** `201 Created` with `{"status": "queued"}`.
 
@@ -182,7 +189,7 @@ php artisan vendor:publish --tag=linkstack-shared-profiles
 | Key | Env var | Default | Description |
 |---|---|---|---|
 | `bot_token` | `TELEGRAM_BOT_TOKEN` | — | Global fallback bot token for Telegram HMAC verification |
-| `auto_approve` | `LINKSTACK_SHARED_PROFILES_AUTO_APPROVE` | `false` | Publish API-submitted links immediately instead of queuing them |
+| `auto_approve` | `LINKSTACK_SHARED_PROFILES_AUTO_APPROVE` | `false` | Publish API-submitted links immediately instead of queuing them. Can be overridden per profile via `users.auto_approve`. |
 | `auth_date_ttl` | — | `300` | Seconds before a Telegram Mini App `initData` payload is considered stale |
 
 ---

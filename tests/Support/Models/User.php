@@ -9,7 +9,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
-    protected $fillable = ['name', 'email', 'api_token', 'telegram_bot_token'];
+    protected $fillable = ['name', 'email', 'api_token', 'telegram_bot_token', 'auto_approve'];
 
     public function links(): HasMany
     {
