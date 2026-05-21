@@ -18,24 +18,22 @@ See full protocol: [`.agent/context/best-practices/git-safety-protocol.md`](.age
 
 ## Project
 
-Shared Profiles for LinkStack is a self-contained **Laravel package** that installs into [LinkStack](https://github.com/LinkStackOrg/LinkStack) via Composer. It adds three features to a standard LinkStack installation without modifying any core LinkStack files:
+Shared Profiles for LinkStack is a self-contained **Laravel package** (`werdswords/linkstack-shared-profiles`) that installs into [LinkStack](https://github.com/LinkStackOrg/LinkStack) via Composer. It adds three features to a standard LinkStack installation **without modifying any core LinkStack files**:
 
-1. **API link submission** — a `POST /api/links` endpoint that accepts links on behalf of a shared profile, authenticated via a bearer token stored on the profile account
-2. **Telegram multi-user management** — multiple Telegram users can authenticate and manage one shared LinkStack profile; supports both browser-based Socialite login and Telegram Mini App `initData` flows
-3. **Link moderation queue** — API-submitted links land in a `pending` state and must be approved by a moderator before appearing on the public profile
+1. **API link submission** — `POST /api/links`, bearer token auth, links land as `pending`
+2. **Telegram multi-user management** — multiple Telegram users authenticate as one shared profile; browser-based Socialite flow and Telegram Mini App `initData` flow
+3. **Link moderation queue** — pending links are approved/rejected via `/studio/moderation`
 
 **Host application:** LinkStack is a Laravel 10 / PHP 8.2 app. The package targets that version range.
 
-**Integration points (no core files modified):**
-- A **view composer** on `linkstack.linkstack` filters pending/rejected links before the Blade template renders
-- Package routes are loaded by the service provider at distinct URL prefixes (`/api/links`, `/telegram-auth`, `/studio/moderation`)
-- Two migrations add a `status` column to `links` and an `api_token` column to `users`, plus create a `telegram_managers` table
-- Socialite is extended with the Telegram driver via the service provider
+See [`.agent/context/architecture.md`](.agent/context/architecture.md) for the full file tree, data model, route table, and integration point details.
 
-**Key constraints:**
-- `UserController::littlelink()` uses a raw `DB::table()` query — not Eloquent — so the public profile link list cannot be intercepted via a model global scope; the view composer is the correct hook
-- Ownership checks in LinkStack use a single `user_id` equality check; Telegram managers authenticate *as* the shared profile's `user_id` so all existing guards pass without modification
-- The `status` column defaults to `'published'` so all pre-existing links and studio-created links are unaffected
+---
+
+## Context
+
+- [Architecture](.agent/context/architecture.md) — package structure, data model, routes, service provider, feature summaries
+- [Testing](.agent/context/testing.md) — test setup pattern, support models, PHPStan gotchas, Socialite mocking, initData signing
 
 ---
 
