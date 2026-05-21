@@ -29,7 +29,8 @@
     "phpunit/phpunit": "^10.5",
     "phpstan/phpstan": "^1.12",
     "laravel/pint": "^1.0",
-    "larastan/larastan": "^2.0"
+    "larastan/larastan": "^2.0",
+    "orchestra/testbench": "^8.0"
   },
   "scripts": {
     "test": "phpunit",
