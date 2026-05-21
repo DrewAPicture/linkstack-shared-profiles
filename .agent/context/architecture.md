@@ -100,7 +100,10 @@ All package routes use distinct URL prefixes to avoid collision with LinkStack's
 
 | Method | URL | Middleware | Controller |
 |---|---|---|---|
+| `GET` | `/api/links` | `throttle:60,1` | `ApiLinkController@index` |
 | `POST` | `/api/links` | `throttle:60,1` | `ApiLinkController@store` |
+| `POST` | `/api/links/{id}/approve` | `throttle:60,1` | `ApiLinkController@approve` |
+| `DELETE` | `/api/links/{id}` | `throttle:60,1` | `ApiLinkController@deny` |
 | `GET` | `/telegram-auth/{profileId}` | `web` | `TelegramAuthController@redirect` |
 | `GET` | `/telegram-auth/{profileId}/callback` | `web` | `TelegramAuthController@callback` |
 | `POST` | `/telegram-login` | `web`, no CSRF | `TelegramAuthController@initDataLogin` |
@@ -116,9 +119,14 @@ All package routes use distinct URL prefixes to avoid collision with LinkStack's
 
 ## Feature Summaries
 
-### Feature 1 — API Link Submission
+### Feature 1 — API Link Submission and Moderation
 
-`POST /api/links` accepts a bearer token, resolves the owning user via `users.api_token`, validates the payload, and inserts a link with `status = 'pending'` (or `'published'` if `auto_approve` is true). Contributor metadata can be passed in a `meta` array and is stored as JSON in `type_params`.
+All four endpoints share bearer token auth: the token is resolved to a `users` row via `users.api_token` in a private `resolveUser()` helper that aborts 401 on failure.
+
+- `GET /api/links` — returns pending links for the authenticated profile as a JSON `data` array. Each item includes `id`, `link`, `title`, `button_id`, `meta` (decoded from `type_params`), and `submitted_at`.
+- `POST /api/links` — validates and inserts a link. Status is `'pending'` or `'published'` depending on the per-profile or global `auto_approve` setting. Contributor metadata in `meta` is stored as JSON in `type_params`.
+- `POST /api/links/{id}/approve` — sets a pending link's status to `'published'`. Returns 404 if the link is not found, not pending, or belongs to another profile.
+- `DELETE /api/links/{id}` — hard-deletes a pending link. Returns 404 if the link is not found, not pending, or belongs to another profile. LinkStack does not support soft deletes on the `links` table.
 
 ### Feature 2 — Telegram Multi-User Management
 

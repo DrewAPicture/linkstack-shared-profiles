@@ -40,6 +40,48 @@ php artisan tinker
 >>> \App\Models\User::find($profileId)->update(['api_token' => \Illuminate\Support\Str::random(80)]);
 ```
 
+### Listing pending links
+
+```
+GET /api/links
+Authorization: Bearer <api_token>
+```
+
+Returns pending links for the authenticated profile:
+
+```json
+{
+    "data": [
+        {
+            "id": 1,
+            "link": "https://example.com",
+            "title": "Example",
+            "button_id": 1,
+            "meta": { "source": "my-app" },
+            "submitted_at": "2024-01-01 00:00:00"
+        }
+    ]
+}
+```
+
+### Approving a link
+
+```
+POST /api/links/{id}/approve
+Authorization: Bearer <api_token>
+```
+
+Sets the link's status to `published`. Returns `404` if the link is not found, not in `pending` status, or belongs to a different profile.
+
+### Denying a link
+
+```
+DELETE /api/links/{id}
+Authorization: Bearer <api_token>
+```
+
+Permanently deletes the link. Returns `404` if the link is not found, not in `pending` status, or belongs to a different profile. LinkStack does not support soft deletes on links.
+
 ### Submitting a link
 
 ```

@@ -120,8 +120,216 @@ final class ApiLinkControllerTest extends TestCase
         ];
     }
 
+    private function createLink(
+        int $userId,
+        int $buttonId,
+        string $status = 'pending',
+        string $link = 'https://example.com',
+        string $title = 'My Link',
+        ?array $meta = null,
+    ): int {
+        return (int) DB::table('links')->insertGetId([
+            'user_id' => $userId,
+            'link' => $link,
+            'title' => $title,
+            'button_id' => $buttonId,
+            'type' => 'predefined',
+            'type_params' => $meta !== null ? json_encode($meta) : null,
+            'status' => $status,
+            'order' => 999,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
     // -------------------------------------------------------------------------
-    // Authentication
+    // index() — authentication
+    // -------------------------------------------------------------------------
+
+    public function testIndexMissingBearerTokenReturns401(): void
+    {
+        $this->getJson('/api/links')->assertStatus(401);
+    }
+
+    public function testIndexInvalidBearerTokenReturns401(): void
+    {
+        $this->withHeaders(['Authorization' => 'Bearer invalid-token'])
+            ->getJson('/api/links')
+            ->assertStatus(401);
+    }
+
+    // -------------------------------------------------------------------------
+    // index() — results
+    // -------------------------------------------------------------------------
+
+    public function testIndexReturnsPendingLinksForAuthenticatedProfile(): void
+    {
+        [$user, $token] = $this->userWithToken();
+        $buttonId = $this->buttonId();
+        $this->createLink($user->id, $buttonId, 'pending', 'https://example.com', 'Pending Link');
+
+        $this->withToken($token)
+            ->getJson('/api/links')
+            ->assertStatus(200)
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', 'Pending Link');
+    }
+
+    public function testIndexExcludesPublishedLinks(): void
+    {
+        [$user, $token] = $this->userWithToken();
+        $buttonId = $this->buttonId();
+        $this->createLink($user->id, $buttonId, 'published', 'https://example.com', 'Published Link');
+
+        $this->withToken($token)
+            ->getJson('/api/links')
+            ->assertStatus(200)
+            ->assertJsonCount(0, 'data');
+    }
+
+    public function testIndexExcludesOtherProfilesLinks(): void
+    {
+        [$user, $token] = $this->userWithToken();
+        $other = User::create(['name' => 'Other', 'email' => 'other@example.com', 'api_token' => 'other-token']);
+        $buttonId = $this->buttonId();
+        $this->createLink($other->id, $buttonId, 'pending', 'https://example.com', 'Other Link');
+
+        $this->withToken($token)
+            ->getJson('/api/links')
+            ->assertStatus(200)
+            ->assertJsonCount(0, 'data');
+    }
+
+    public function testIndexDecodesMetaFromTypeParams(): void
+    {
+        [$user, $token] = $this->userWithToken();
+        $buttonId = $this->buttonId();
+        $this->createLink($user->id, $buttonId, 'pending', 'https://example.com', 'Link', ['source' => 'bot']);
+
+        $this->withToken($token)
+            ->getJson('/api/links')
+            ->assertStatus(200)
+            ->assertJsonPath('data.0.meta.source', 'bot');
+    }
+
+    public function testIndexReturnsEmptyDataWhenNoPendingLinks(): void
+    {
+        [, $token] = $this->userWithToken();
+
+        $this->withToken($token)
+            ->getJson('/api/links')
+            ->assertStatus(200)
+            ->assertJson(['data' => []]);
+    }
+
+    // -------------------------------------------------------------------------
+    // approve() — authentication
+    // -------------------------------------------------------------------------
+
+    public function testApproveMissingBearerTokenReturns401(): void
+    {
+        $this->postJson('/api/links/1/approve')->assertStatus(401);
+    }
+
+    // -------------------------------------------------------------------------
+    // approve() — status change
+    // -------------------------------------------------------------------------
+
+    public function testApproveSetsPendingLinkToPublished(): void
+    {
+        [$user, $token] = $this->userWithToken();
+        $buttonId = $this->buttonId();
+        $linkId = $this->createLink($user->id, $buttonId, 'pending');
+
+        $this->withToken($token)
+            ->postJson("/api/links/{$linkId}/approve")
+            ->assertStatus(200)
+            ->assertJson(['status' => 'approved']);
+
+        $this->assertDatabaseHas('links', ['id' => $linkId, 'status' => 'published']);
+    }
+
+    public function testApproveReturns404ForAnotherProfilesLink(): void
+    {
+        [, $token] = $this->userWithToken();
+        $other = User::create(['name' => 'Other', 'email' => 'other@example.com', 'api_token' => 'other-token']);
+        $buttonId = $this->buttonId();
+        $linkId = $this->createLink($other->id, $buttonId, 'pending');
+
+        $this->withToken($token)
+            ->postJson("/api/links/{$linkId}/approve")
+            ->assertStatus(404);
+
+        $this->assertDatabaseHas('links', ['id' => $linkId, 'status' => 'pending']);
+    }
+
+    public function testApproveReturns404ForNonPendingLink(): void
+    {
+        [$user, $token] = $this->userWithToken();
+        $buttonId = $this->buttonId();
+        $linkId = $this->createLink($user->id, $buttonId, 'published');
+
+        $this->withToken($token)
+            ->postJson("/api/links/{$linkId}/approve")
+            ->assertStatus(404);
+    }
+
+    // -------------------------------------------------------------------------
+    // deny() — authentication
+    // -------------------------------------------------------------------------
+
+    public function testDenyMissingBearerTokenReturns401(): void
+    {
+        $this->deleteJson('/api/links/1')->assertStatus(401);
+    }
+
+    // -------------------------------------------------------------------------
+    // deny() — deletion
+    // -------------------------------------------------------------------------
+
+    public function testDenyDeletesPendingLink(): void
+    {
+        [$user, $token] = $this->userWithToken();
+        $buttonId = $this->buttonId();
+        $linkId = $this->createLink($user->id, $buttonId, 'pending');
+
+        $this->withToken($token)
+            ->deleteJson("/api/links/{$linkId}")
+            ->assertStatus(200)
+            ->assertJson(['status' => 'denied']);
+
+        $this->assertDatabaseMissing('links', ['id' => $linkId]);
+    }
+
+    public function testDenyReturns404ForAnotherProfilesLink(): void
+    {
+        [, $token] = $this->userWithToken();
+        $other = User::create(['name' => 'Other', 'email' => 'other@example.com', 'api_token' => 'other-token']);
+        $buttonId = $this->buttonId();
+        $linkId = $this->createLink($other->id, $buttonId, 'pending');
+
+        $this->withToken($token)
+            ->deleteJson("/api/links/{$linkId}")
+            ->assertStatus(404);
+
+        $this->assertDatabaseHas('links', ['id' => $linkId]);
+    }
+
+    public function testDenyReturns404ForNonPendingLink(): void
+    {
+        [$user, $token] = $this->userWithToken();
+        $buttonId = $this->buttonId();
+        $linkId = $this->createLink($user->id, $buttonId, 'published');
+
+        $this->withToken($token)
+            ->deleteJson("/api/links/{$linkId}")
+            ->assertStatus(404);
+
+        $this->assertDatabaseHas('links', ['id' => $linkId]);
+    }
+
+    // -------------------------------------------------------------------------
+    // store() — authentication
     // -------------------------------------------------------------------------
 
     public function testMissingBearerTokenReturns401(): void
