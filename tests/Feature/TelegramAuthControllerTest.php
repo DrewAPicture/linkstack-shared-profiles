@@ -113,7 +113,7 @@ final class TelegramAuthControllerTest extends TestCase
     /**
      * Build a properly HMAC-signed initData string matching Telegram's Mini App spec.
      */
-    private function buildValidInitData(int|string $telegramId, int $authDate = 0, string $signingToken = self::BOT_TOKEN): string
+    private function buildValidInitData(int|string $telegramId, int $authDate = 0, #[\SensitiveParameter] string $signingToken = self::BOT_TOKEN): string
     {
         if ($authDate === 0) {
             $authDate = time();
