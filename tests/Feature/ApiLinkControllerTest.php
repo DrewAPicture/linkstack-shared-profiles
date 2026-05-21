@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WerdsWords\LinkStack\SharedProfiles\Tests\Feature;
 
+use Generator;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -466,7 +467,7 @@ final class ApiLinkControllerTest extends TestCase
             ->assertJsonValidationErrors([$invalidField]);
     }
 
-    public static function provideInvalidPayloads(): \Generator
+    public static function provideInvalidPayloads(): Generator
     {
         yield 'invalid url' => [
             ['link' => 'not-a-url', 'title' => 'T', 'button_id' => 1],

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WerdsWords\LinkStack\SharedProfiles\Tests\Unit;
 
+use Generator;
 use Illuminate\Config\Repository;
 use Illuminate\Container\Container;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
@@ -54,7 +55,7 @@ final class ServiceProviderTest extends TestCase
         $this->assertArrayHasKey($key, $config);
     }
 
-    public static function provideConfigKeys(): \Generator
+    public static function provideConfigKeys(): Generator
     {
         yield 'bot_token' => ['bot_token'];
         yield 'auto_approve' => ['auto_approve'];
@@ -73,7 +74,7 @@ final class ServiceProviderTest extends TestCase
         $this->assertSame($expected, $config[$key]);
     }
 
-    public static function provideConfigDefaults(): \Generator
+    public static function provideConfigDefaults(): Generator
     {
         yield 'auto_approve defaults to false' => ['auto_approve', false];
         yield 'auth_date_ttl defaults to 300 seconds' => ['auth_date_ttl', 300];
