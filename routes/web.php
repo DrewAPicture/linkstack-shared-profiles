@@ -6,11 +6,13 @@ use WerdsWords\LinkStack\SharedProfiles\Http\Controllers\ModerationController;
 use WerdsWords\LinkStack\SharedProfiles\Http\Controllers\TelegramAuthController;
 
 // Approach A: browser-based Telegram Login Widget
+// {profileId} encodes which profile is authenticating so the callback can
+// resolve the right bot token without session state.
 Route::middleware('web')->group(function () {
-    Route::get('/telegram-auth', [TelegramAuthController::class, 'redirect'])
+    Route::get('/telegram-auth/{profileId}', [TelegramAuthController::class, 'redirect'])
         ->name('linkstack-shared-profiles.telegram.redirect');
 
-    Route::get('/telegram-auth/callback', [TelegramAuthController::class, 'callback'])
+    Route::get('/telegram-auth/{profileId}/callback', [TelegramAuthController::class, 'callback'])
         ->name('linkstack-shared-profiles.telegram.callback');
 });
 
