@@ -4,9 +4,29 @@ namespace WerdsWords\LinkStack\SharedProfiles;
 
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
+use WerdsWords\LinkStack\SharedProfiles\Providers\Contracts\NotifierContract;
 
 class ServiceProvider extends BaseServiceProvider
 {
+    /** @var list<NotifierContract> */
+    private static array $notifiers = [];
+
+    public static function registerNotifier(NotifierContract $notifier): void
+    {
+        self::$notifiers[] = $notifier;
+    }
+
+    /** @return list<NotifierContract> */
+    public static function registeredNotifiers(): array
+    {
+        return self::$notifiers;
+    }
+
+    public static function flushNotifiers(): void
+    {
+        self::$notifiers = [];
+    }
+
     public function register(): void
     {
         $this->mergeConfigFrom(
