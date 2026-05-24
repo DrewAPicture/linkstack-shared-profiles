@@ -103,4 +103,56 @@ final class TelegramMessagingServiceTest extends TestCase
 
         $this->assertFalse($result);
     }
+
+    // -------------------------------------------------------------------------
+    // sendMessageWithKeyboard()
+    // -------------------------------------------------------------------------
+
+    public function testSendMessageWithKeyboardPostsToCorrectTelegramApiUrl(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true], 200)]);
+
+        $service = new TelegramMessagingService;
+        $service->sendMessageWithKeyboard('my-bot-token', '12345678', 'Pick one:', []);
+
+        Http::assertSent(
+            fn ($request) => $request->url() === 'https://api.telegram.org/botmy-bot-token/sendMessage'
+        );
+    }
+
+    public function testSendMessageWithKeyboardIncludesChatIdTextAndReplyMarkup(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true], 200)]);
+
+        $keyboard = [[['text' => '✅ Approve', 'callback_data' => 'approve:1']]];
+
+        $service = new TelegramMessagingService;
+        $service->sendMessageWithKeyboard('my-bot-token', '12345678', 'Pick one:', $keyboard);
+
+        Http::assertSent(function ($request) use ($keyboard) {
+            return $request['chat_id'] === '12345678'
+                && $request['text'] === 'Pick one:'
+                && $request['reply_markup'] === ['inline_keyboard' => $keyboard];
+        });
+    }
+
+    public function testSendMessageWithKeyboardReturnsTrueOnSuccess(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true], 200)]);
+
+        $service = new TelegramMessagingService;
+        $result = $service->sendMessageWithKeyboard('my-bot-token', '12345678', 'Pick one:', []);
+
+        $this->assertTrue($result);
+    }
+
+    public function testSendMessageWithKeyboardReturnsFalseOnApiError(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => false], 400)]);
+
+        $service = new TelegramMessagingService;
+        $result = $service->sendMessageWithKeyboard('my-bot-token', '12345678', 'Pick one:', []);
+
+        $this->assertFalse($result);
+    }
 }
