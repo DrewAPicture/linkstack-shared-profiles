@@ -36,11 +36,14 @@ Route::post('/telegram-login', [TelegramAuthController::class, 'initDataLogin'])
     ->withoutMiddleware([VerifyCsrfToken::class])
     ->name('linkstack-shared-profiles.telegram.initdata');
 
-// Contributor Mini App — serves the submission form and receives submissions.
+// Telegram Mini App views — contributor submission form and moderator auth wrapper.
 // initData HMAC is the security layer; no session or CSRF token is needed.
 Route::middleware('web')->group(function () {
     Route::get('/telegram-app/submit', [TelegramSubmitController::class, 'app'])
         ->name('linkstack-shared-profiles.telegram-app.submit');
+
+    Route::get('/telegram-app/moderate', fn () => view('linkstack-shared-profiles::telegram-app.moderate'))
+        ->name('linkstack-shared-profiles.telegram-app.moderate');
 
     Route::post('/telegram/submit', [TelegramSubmitController::class, 'store'])
         ->withoutMiddleware([VerifyCsrfToken::class])
