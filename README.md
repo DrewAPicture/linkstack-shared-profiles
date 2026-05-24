@@ -236,6 +236,31 @@ The webhook handles two update types:
 - **`message`** — Responds to the `/auth` command by sending the moderator a private DM with a login button.
 - **`callback_query`** — Handles `approve:{id}` and `reject:{id}` inline button taps from moderator notification messages.
 
+### Contributor Mini App registration
+
+Run once per group. Links submitted through the Mini App are routed to a profile by matching `initData.chat.id` against `users.telegram_group_chat_id`, so that column must be set before the bot can accept submissions.
+
+**1. Set the group chat ID on the profile:**
+
+```bash
+php artisan tinker
+\App\Models\User::find($profileId)->update(['telegram_group_chat_id' => '-1001234567890']);
+```
+
+**2. Register the Mini App as the group's menu button:**
+
+```bash
+curl -X POST "https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setChatMenuButton" \
+  -d "chat_id={GROUP_CHAT_ID}" \
+  -d 'menu_button={"type":"web_app","text":"Submit a Link","web_app":{"url":"https://yourdomain.com/telegram-app/submit"}}'
+```
+
+Members can then open the form from the button in the message bar. `initData.chat.id` is automatically set to the group's ID, so submissions from different groups are routed to the correct profile without any additional configuration.
+
+### Moderator Mini App
+
+The moderator Mini App at `/telegram-app/moderate` does not require a menu button registration — it is accessed by sharing the URL directly with known moderators or linking to it from a pinned message. It authenticates using the existing `POST /telegram-login` endpoint, establishes a Laravel session, and redirects to `/studio/moderation`.
+
 ---
 
 ## Configuration
