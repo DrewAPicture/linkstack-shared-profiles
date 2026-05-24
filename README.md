@@ -273,9 +273,11 @@ php artisan vendor:publish --tag=linkstack-shared-profiles
 
 | Key | Env var | Default | Description |
 |---|---|---|---|
-| `bot_token` | `TELEGRAM_BOT_TOKEN` | — | Global fallback bot token for Telegram HMAC verification |
-| `auto_approve` | `LINKSTACK_SHARED_PROFILES_AUTO_APPROVE` | `false` | Publish API-submitted links immediately instead of queuing them. Can be overridden per profile via `users.auto_approve`. |
+| `bot_token` | `TELEGRAM_BOT_TOKEN` | — | Global fallback bot token used for HMAC verification and sending messages when no per-profile token is set |
+| `auto_approve` | `LINKSTACK_SHARED_PROFILES_AUTO_APPROVE` | `false` | Publish submitted links immediately instead of queuing them. Can be overridden per profile via `users.auto_approve`. |
 | `auth_date_ttl` | — | `300` | Seconds before a Telegram Mini App `initData` payload is considered stale |
+| `default_button_id` | `TELEGRAM_DEFAULT_BUTTON_ID` | — | `buttons.id` assigned to every link submitted via the Telegram contributor Mini App |
+| `webhook_secret` | `TELEGRAM_WEBHOOK_SECRET` | — | Shared secret validated against the `X-Telegram-Bot-Api-Secret-Token` header on incoming webhook updates |
 
 ---
 
