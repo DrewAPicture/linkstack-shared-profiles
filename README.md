@@ -214,6 +214,30 @@ The file will be published to `resources/views/vendor/linkstack-shared-profiles/
 
 ---
 
+## Telegram Bot Setup
+
+Run the following once per installation to connect the bot to your server.
+
+### Webhook registration
+
+Register the webhook with Telegram so updates are pushed to your application:
+
+```bash
+curl -X POST "https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setWebhook" \
+  -d "url=https://yourdomain.com/telegram/webhook" \
+  -d "secret_token={TELEGRAM_WEBHOOK_SECRET}" \
+  -d "allowed_updates=[\"message\",\"callback_query\"]"
+```
+
+Each incoming update will carry an `X-Telegram-Bot-Api-Secret-Token` header. The package validates it against `TELEGRAM_WEBHOOK_SECRET` and returns `403` if it does not match.
+
+The webhook handles two update types:
+
+- **`message`** — Responds to the `/auth` command by sending the moderator a private DM with a login button.
+- **`callback_query`** — Handles `approve:{id}` and `reject:{id}` inline button taps from moderator notification messages.
+
+---
+
 ## Configuration
 
 Publish the config file if you want to modify defaults:
