@@ -62,6 +62,18 @@ final class ProviderSettingTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // setAttribute() — SensitiveParameter
+    // -------------------------------------------------------------------------
+
+    public function testSetSettingsValueHasSensitiveParameterAttribute(): void
+    {
+        $method = new \ReflectionMethod(ProviderSetting::class, 'setSettingsValue');
+        $param = $method->getParameters()[0];
+
+        $this->assertNotEmpty($param->getAttributes(\SensitiveParameter::class));
+    }
+
+    // -------------------------------------------------------------------------
     // settings cast
     // -------------------------------------------------------------------------
 

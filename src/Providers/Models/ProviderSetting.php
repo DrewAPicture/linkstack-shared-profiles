@@ -32,6 +32,20 @@ class ProviderSetting extends Model
         'settings' => 'encrypted:array',
     ];
 
+    public function setAttribute($key, $value): mixed
+    {
+        if ($key === 'settings') {
+            return $this->setSettingsValue($value);
+        }
+
+        return parent::setAttribute($key, $value);
+    }
+
+    private function setSettingsValue(#[\SensitiveParameter] mixed $value): mixed
+    {
+        return parent::setAttribute('settings', $value);
+    }
+
     /**
      * @param  Builder<ProviderSetting>  $query
      * @return Builder<ProviderSetting>
