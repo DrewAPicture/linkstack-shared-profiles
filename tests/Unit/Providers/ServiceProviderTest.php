@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\CoversMethod;
 use WerdsWords\LinkStack\SharedProfiles\Providers\ServiceProvider;
 use WerdsWords\LinkStack\SharedProfiles\ServiceProvider as CoreServiceProvider;
+use WerdsWords\LinkStack\SharedProfiles\Tests\Support\Models\User;
 
 #[CoversClass(ServiceProvider::class)]
 final class ServiceProviderTest extends TestCase
@@ -22,6 +23,7 @@ final class ServiceProviderTest extends TestCase
     protected function defineEnvironment($app): void
     {
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+        $app['config']->set('auth.providers.users.model', User::class);
     }
 
     // -------------------------------------------------------------------------

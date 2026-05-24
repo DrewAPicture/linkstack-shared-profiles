@@ -6,14 +6,14 @@ All endpoints require a bearer token and are throttled at 60 requests per minute
 
 ## API Token
 
-Each profile that will accept API submissions needs an `api_token` set on its `users` row. Tokens are stored as SHA-256 hashes, so you must hash the token before storing it and send the raw value in the `Authorization` header.
+Each profile that will accept API submissions needs an `api_token` set on its `users` row. Tokens are stored as SHA-256 hashes; only the raw value is ever sent over the wire. Store tokens via `setApiToken()` so the hashing is handled consistently:
 
 ```php
 // Generate and store a token (e.g. in tinker or a setup command)
 $raw = \Illuminate\Support\Str::random(60);
-\App\Models\User::find($profileId)->update([
-    'api_token' => hash('sha256', $raw),
-]);
+$user = \App\Models\User::findOrFail($profileId);
+$user->setApiToken($raw);
+$user->save();
 // Give $raw to the client — it cannot be recovered from the stored hash
 ```
 

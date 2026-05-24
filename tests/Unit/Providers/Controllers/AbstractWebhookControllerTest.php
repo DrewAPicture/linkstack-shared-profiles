@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\CoversMethod;
 use WerdsWords\LinkStack\SharedProfiles\Providers\Controllers\AbstractWebhookController;
 use WerdsWords\LinkStack\SharedProfiles\ServiceProvider;
+use WerdsWords\LinkStack\SharedProfiles\Tests\Support\Models\User;
 
 #[CoversClass(AbstractWebhookController::class)]
 final class AbstractWebhookControllerTest extends TestCase
@@ -18,6 +19,11 @@ final class AbstractWebhookControllerTest extends TestCase
     protected function getPackageProviders($app): array
     {
         return [ServiceProvider::class];
+    }
+
+    protected function defineEnvironment($app): void
+    {
+        $app['config']->set('auth.providers.users.model', User::class);
     }
 
     // -------------------------------------------------------------------------

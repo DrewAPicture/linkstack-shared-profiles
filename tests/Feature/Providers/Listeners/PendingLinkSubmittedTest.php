@@ -8,12 +8,18 @@ use Orchestra\Testbench\TestCase;
 use WerdsWords\LinkStack\SharedProfiles\Events\PendingLinkSubmitted;
 use WerdsWords\LinkStack\SharedProfiles\Providers\Contracts\NotifierContract;
 use WerdsWords\LinkStack\SharedProfiles\ServiceProvider;
+use WerdsWords\LinkStack\SharedProfiles\Tests\Support\Models\User;
 
 final class PendingLinkSubmittedTest extends TestCase
 {
     protected function getPackageProviders($app): array
     {
         return [ServiceProvider::class];
+    }
+
+    protected function defineEnvironment($app): void
+    {
+        $app['config']->set('auth.providers.users.model', User::class);
     }
 
     protected function tearDown(): void
