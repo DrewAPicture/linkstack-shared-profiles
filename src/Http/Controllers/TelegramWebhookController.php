@@ -57,9 +57,9 @@ class TelegramWebhookController extends Controller
 
         $loginUrl = config('app.url').'/telegram-auth/'.$manager->profile_id;
         $botToken = $this->resolveToken($manager->profile_id);
-
-        /** @var string $buttonLabel */
-        $buttonLabel = config('linkstack-shared-profiles.auth_button_label', 'Log in to LinkStack');
+        /** @var string $appName */
+        $appName = config('app.name', 'LinkStack');
+        $buttonLabel = sprintf('Log in to %s', $appName);
 
         $this->messagingService->sendMessageWithKeyboard(
             $botToken,

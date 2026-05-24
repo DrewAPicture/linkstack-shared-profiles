@@ -207,16 +207,16 @@ final class TelegramWebhookControllerTest extends TestCase
         $this->postWebhook($this->messageUpdate('/auth'))->assertStatus(200);
     }
 
-    public function testAuthCommandUsesConfiguredButtonLabel(): void
+    public function testAuthCommandButtonLabelUsesAppName(): void
     {
-        $this->app['config']->set('linkstack-shared-profiles.auth_button_label', 'Accedi a LinkStack');
+        $this->app['config']->set('app.name', 'MyStack');
         $user = $this->createUser();
         $this->createManager($user->id, '12345678');
 
         $mock = Mockery::mock(TelegramMessagingService::class);
         $mock->shouldReceive('sendMessageWithKeyboard')
             ->once()
-            ->withArgs(fn ($token, $chatId, $text, $keyboard) => ($keyboard[0][0]['text'] ?? '') === 'Accedi a LinkStack');
+            ->withArgs(fn ($token, $chatId, $text, $keyboard) => ($keyboard[0][0]['text'] ?? '') === 'Log in to MyStack');
         $this->app->instance(TelegramMessagingService::class, $mock);
 
         $this->postWebhook($this->messageUpdate('/auth'))->assertStatus(200);
