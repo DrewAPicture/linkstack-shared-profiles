@@ -7,7 +7,6 @@ namespace WerdsWords\LinkStack\SharedProfiles\Tests\Feature;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Laravel\Socialite\SocialiteServiceProvider;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use WerdsWords\LinkStack\SharedProfiles\Http\Controllers\ModerationController;
@@ -21,7 +20,6 @@ final class ModerationControllerTest extends TestCase
     protected function getPackageProviders($app): array
     {
         return [
-            SocialiteServiceProvider::class,
             ServiceProvider::class,
         ];
     }
