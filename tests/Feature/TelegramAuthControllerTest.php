@@ -336,7 +336,7 @@ final class TelegramAuthControllerTest extends TestCase
 
         $this->postJson('/telegram-login', ['init_data' => $initData])
             ->assertStatus(200)
-            ->assertJson(['redirect' => '/studio/index']);
+            ->assertJson(['redirect' => '/studio/moderation']);
 
         $this->assertAuthenticated();
     }
@@ -362,7 +362,7 @@ final class TelegramAuthControllerTest extends TestCase
 
         $this->postJson('/telegram-login', ['init_data' => $initData])
             ->assertStatus(200)
-            ->assertJson(['redirect' => '/studio/index']);
+            ->assertJson(['redirect' => '/studio/moderation']);
 
         $this->assertAuthenticated();
     }
