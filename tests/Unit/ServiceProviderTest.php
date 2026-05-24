@@ -12,12 +12,25 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\CoversMethod;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use WerdsWords\LinkStack\SharedProfiles\Providers\Contracts\NotifierContract;
 use WerdsWords\LinkStack\SharedProfiles\ServiceProvider;
 
 #[CoversClass(ServiceProvider::class)]
 #[CoversMethod(ServiceProvider::class, 'register')]
 final class ServiceProviderTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        ServiceProvider::flushNotifiers();
+    }
+
+    protected function tearDown(): void
+    {
+        ServiceProvider::flushNotifiers();
+        parent::tearDown();
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
@@ -101,5 +114,63 @@ final class ServiceProviderTest extends TestCase
         $config = $this->loadedConfig();
 
         $this->assertSame($expected, $config->get("linkstack-shared-profiles.{$key}"));
+    }
+
+    // -------------------------------------------------------------------------
+    // registerNotifier() / registeredNotifiers() / flushNotifiers()
+    // -------------------------------------------------------------------------
+
+    #[CoversMethod(ServiceProvider::class, 'registeredNotifiers')]
+    public function testRegisteredNotifiersIsEmptyByDefault(): void
+    {
+        $this->assertSame([], ServiceProvider::registeredNotifiers());
+    }
+
+    #[CoversMethod(ServiceProvider::class, 'registerNotifier')]
+    #[CoversMethod(ServiceProvider::class, 'registeredNotifiers')]
+    public function testRegisterNotifierAddsToRegistry(): void
+    {
+        $stub = new class implements NotifierContract
+        {
+            public function notifyModerators(int $profileId, int $linkId, string $link, string $title): void {}
+        };
+
+        ServiceProvider::registerNotifier($stub);
+
+        $this->assertCount(1, ServiceProvider::registeredNotifiers());
+        $this->assertSame($stub, ServiceProvider::registeredNotifiers()[0]);
+    }
+
+    #[CoversMethod(ServiceProvider::class, 'registerNotifier')]
+    #[CoversMethod(ServiceProvider::class, 'registeredNotifiers')]
+    public function testMultipleNotifiersCanBeRegistered(): void
+    {
+        $stubA = new class implements NotifierContract
+        {
+            public function notifyModerators(int $profileId, int $linkId, string $link, string $title): void {}
+        };
+        $stubB = new class implements NotifierContract
+        {
+            public function notifyModerators(int $profileId, int $linkId, string $link, string $title): void {}
+        };
+
+        ServiceProvider::registerNotifier($stubA);
+        ServiceProvider::registerNotifier($stubB);
+
+        $this->assertCount(2, ServiceProvider::registeredNotifiers());
+    }
+
+    #[CoversMethod(ServiceProvider::class, 'flushNotifiers')]
+    public function testFlushNotifiersClearsRegistry(): void
+    {
+        $stub = new class implements NotifierContract
+        {
+            public function notifyModerators(int $profileId, int $linkId, string $link, string $title): void {}
+        };
+
+        ServiceProvider::registerNotifier($stub);
+        ServiceProvider::flushNotifiers();
+
+        $this->assertSame([], ServiceProvider::registeredNotifiers());
     }
 }

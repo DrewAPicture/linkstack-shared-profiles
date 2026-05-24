@@ -2,11 +2,34 @@
 
 namespace WerdsWords\LinkStack\SharedProfiles;
 
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
+use WerdsWords\LinkStack\SharedProfiles\Events\PendingLinkSubmitted;
+use WerdsWords\LinkStack\SharedProfiles\Providers\Contracts\NotifierContract;
+use WerdsWords\LinkStack\SharedProfiles\Providers\Listeners\NotifyProvidersOfPendingLink;
 
 class ServiceProvider extends BaseServiceProvider
 {
+    /** @var list<NotifierContract> */
+    private static array $notifiers = [];
+
+    public static function registerNotifier(NotifierContract $notifier): void
+    {
+        self::$notifiers[] = $notifier;
+    }
+
+    /** @return list<NotifierContract> */
+    public static function registeredNotifiers(): array
+    {
+        return self::$notifiers;
+    }
+
+    public static function flushNotifiers(): void
+    {
+        self::$notifiers = [];
+    }
+
     public function register(): void
     {
         $this->mergeConfigFrom(
@@ -41,5 +64,7 @@ class ServiceProvider extends BaseServiceProvider
                 fn ($link) => ! isset($link->status) || $link->status === 'published'
             ));
         });
+
+        Event::listen(PendingLinkSubmitted::class, NotifyProvidersOfPendingLink::class);
     }
 }
