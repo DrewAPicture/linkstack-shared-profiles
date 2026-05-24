@@ -206,4 +206,64 @@ final class TelegramMessagingServiceTest extends TestCase
 
         $this->assertFalse($result);
     }
+
+    // -------------------------------------------------------------------------
+    // answerCallbackQuery()
+    // -------------------------------------------------------------------------
+
+    public function testAnswerCallbackQueryPostsToCorrectTelegramApiUrl(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true], 200)]);
+
+        $service = new TelegramMessagingService;
+        $service->answerCallbackQuery('my-bot-token', 'query-id-abc');
+
+        Http::assertSent(
+            fn ($request) => $request->url() === 'https://api.telegram.org/botmy-bot-token/answerCallbackQuery'
+        );
+    }
+
+    public function testAnswerCallbackQueryIncludesCallbackQueryId(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true], 200)]);
+
+        $service = new TelegramMessagingService;
+        $service->answerCallbackQuery('my-bot-token', 'query-id-abc');
+
+        Http::assertSent(
+            fn ($request) => $request['callback_query_id'] === 'query-id-abc' && $request['text'] === ''
+        );
+    }
+
+    public function testAnswerCallbackQueryIncludesOptionalText(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true], 200)]);
+
+        $service = new TelegramMessagingService;
+        $service->answerCallbackQuery('my-bot-token', 'query-id-abc', 'Done!');
+
+        Http::assertSent(
+            fn ($request) => $request['text'] === 'Done!'
+        );
+    }
+
+    public function testAnswerCallbackQueryReturnsTrueOnSuccess(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true], 200)]);
+
+        $service = new TelegramMessagingService;
+        $result = $service->answerCallbackQuery('my-bot-token', 'query-id-abc');
+
+        $this->assertTrue($result);
+    }
+
+    public function testAnswerCallbackQueryReturnsFalseOnApiError(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => false], 400)]);
+
+        $service = new TelegramMessagingService;
+        $result = $service->answerCallbackQuery('my-bot-token', 'query-id-abc');
+
+        $this->assertFalse($result);
+    }
 }

@@ -65,4 +65,17 @@ class TelegramMessagingService
 
         return $response->successful();
     }
+
+    /**
+     * Answer a callback query to dismiss the loading spinner on an inline button tap.
+     */
+    public function answerCallbackQuery(#[SensitiveParameter] string $botToken, string $callbackQueryId, string $text = ''): bool
+    {
+        $response = Http::post(
+            self::API_BASE."/bot{$botToken}/answerCallbackQuery",
+            ['callback_query_id' => $callbackQueryId, 'text' => $text]
+        );
+
+        return $response->successful();
+    }
 }
