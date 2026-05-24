@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
-use Laravel\Socialite\SocialiteServiceProvider;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -26,7 +25,6 @@ final class ApiLinkControllerTest extends TestCase
     protected function getPackageProviders($app): array
     {
         return [
-            SocialiteServiceProvider::class,
             ServiceProvider::class,
         ];
     }
