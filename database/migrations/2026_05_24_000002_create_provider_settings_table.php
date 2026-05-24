@@ -9,11 +9,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('provider_settings', function (Blueprint $table) {
+            $table->id();
             $table->unsignedBigInteger('profile_id');
             $table->string('provider');
             $table->json('settings');
 
-            $table->primary(['profile_id', 'provider']);
+            $table->unique(['profile_id', 'provider']);
             $table->foreign('profile_id')->references('id')->on('users')->cascadeOnDelete();
         });
     }
