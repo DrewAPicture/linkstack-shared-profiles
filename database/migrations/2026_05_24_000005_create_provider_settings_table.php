@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('profile_id');
             $table->string('provider');
-            $table->json('settings');
+            $table->text('settings');
 
             $table->unique(['profile_id', 'provider']);
             $table->foreign('profile_id')->references('id')->on('users')->cascadeOnDelete();

@@ -29,7 +29,7 @@ class ProviderSetting extends Model
 
     protected $casts = [
         'profile_id' => 'integer',
-        'settings' => 'array',
+        'settings' => 'encrypted:array',
     ];
 
     /**

@@ -25,6 +25,7 @@ final class ProviderSettingTest extends TestCase
 
     protected function defineEnvironment($app): void
     {
+        $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
         $app['config']->set('database.default', 'testing');
         $app['config']->set('database.connections.testing', [
             'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
@@ -42,7 +43,7 @@ final class ProviderSettingTest extends TestCase
             $table->id();
             $table->unsignedBigInteger('profile_id');
             $table->string('provider');
-            $table->json('settings');
+            $table->text('settings');
             $table->unique(['profile_id', 'provider']);
             $table->foreign('profile_id')->references('id')->on('users')->cascadeOnDelete();
         });
