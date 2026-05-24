@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WerdsWords\LinkStack\SharedProfiles\Providers\Support;
 
-final class ReplayGuard
+final class AuthReplayGuard
 {
     public static function isStale(int $timestamp, int $ttlSeconds): bool
     {
