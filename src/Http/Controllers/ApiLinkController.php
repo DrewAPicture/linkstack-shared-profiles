@@ -121,7 +121,7 @@ class ApiLinkController extends Controller
 
         /** @var class-string<Model> $userModel */
         $userModel = config('auth.providers.users.model');
-        $user = $userModel::where('api_token', $token)->first();
+        $user = $userModel::where('api_token', hash('sha256', $token))->first();
 
         if (! $user) {
             abort(401, 'Invalid API token.');
