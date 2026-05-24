@@ -7,6 +7,7 @@ use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 use Laravel\Socialite\Contracts\Factory as Socialite;
 use SocialiteProviders\Telegram\Provider as TelegramProvider;
 use WerdsWords\LinkStack\SharedProfiles\Services\TelegramMessagingService;
+use WerdsWords\LinkStack\SharedProfiles\Services\TelegramNotificationService;
 
 class ServiceProvider extends BaseServiceProvider
 {
@@ -17,6 +18,7 @@ class ServiceProvider extends BaseServiceProvider
         );
 
         $this->app->singleton(TelegramMessagingService::class, fn () => new TelegramMessagingService);
+        $this->app->singleton(TelegramNotificationService::class, fn ($app) => new TelegramNotificationService($app->make(TelegramMessagingService::class)));
     }
 
     public function boot(): void

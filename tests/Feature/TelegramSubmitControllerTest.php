@@ -14,7 +14,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use SensitiveParameter;
 use WerdsWords\LinkStack\SharedProfiles\Http\Controllers\TelegramSubmitController;
 use WerdsWords\LinkStack\SharedProfiles\ServiceProvider;
-use WerdsWords\LinkStack\SharedProfiles\Services\TelegramMessagingService;
+use WerdsWords\LinkStack\SharedProfiles\Services\TelegramNotificationService;
 use WerdsWords\LinkStack\SharedProfiles\Tests\Support\Models\User;
 
 #[CoversClass(TelegramSubmitController::class)]
@@ -333,14 +333,12 @@ final class TelegramSubmitControllerTest extends TestCase
         $user = $this->createUser();
         $this->createManager($user->id, '11111111');
 
-        $mock = Mockery::mock(TelegramMessagingService::class);
-        $mock->shouldReceive('sendMessageWithKeyboard')
+        $mock = Mockery::mock(TelegramNotificationService::class);
+        $mock->shouldReceive('notifyModerators')
             ->once()
-            ->withArgs(fn ($token, $chatId, $text, $keyboard) => $token === self::BOT_TOKEN
-                && $chatId === '11111111'
-                && str_contains($text, 'My Twitter')
-                && str_contains($text, 'https://twitter.com/example'));
-        $this->app->instance(TelegramMessagingService::class, $mock);
+            ->withArgs(fn ($profileId, $linkId, $link, $title) => $link === 'https://twitter.com/example'
+                && $title === 'My Twitter');
+        $this->app->instance(TelegramNotificationService::class, $mock);
 
         $this->postJson('/telegram/submit', $this->validPayload())
             ->assertStatus(201);
@@ -352,9 +350,9 @@ final class TelegramSubmitControllerTest extends TestCase
         $this->createManager($user->id, '11111111');
         $this->createManager($user->id, '22222222');
 
-        $mock = Mockery::mock(TelegramMessagingService::class);
-        $mock->shouldReceive('sendMessageWithKeyboard')->twice()->andReturn(true);
-        $this->app->instance(TelegramMessagingService::class, $mock);
+        $mock = Mockery::mock(TelegramNotificationService::class);
+        $mock->shouldReceive('notifyModerators')->once();
+        $this->app->instance(TelegramNotificationService::class, $mock);
 
         $this->postJson('/telegram/submit', $this->validPayload())
             ->assertStatus(201);
@@ -365,9 +363,9 @@ final class TelegramSubmitControllerTest extends TestCase
         $user = $this->createUser(autoApprove: true);
         $this->createManager($user->id, '11111111');
 
-        $mock = Mockery::mock(TelegramMessagingService::class);
-        $mock->shouldReceive('sendMessageWithKeyboard')->never();
-        $this->app->instance(TelegramMessagingService::class, $mock);
+        $mock = Mockery::mock(TelegramNotificationService::class);
+        $mock->shouldReceive('notifyModerators')->never();
+        $this->app->instance(TelegramNotificationService::class, $mock);
 
         $this->postJson('/telegram/submit', $this->validPayload())
             ->assertStatus(201);

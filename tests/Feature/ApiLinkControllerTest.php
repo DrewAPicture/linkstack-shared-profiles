@@ -10,11 +10,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Laravel\Socialite\SocialiteServiceProvider;
+use Mockery;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use WerdsWords\LinkStack\SharedProfiles\Http\Controllers\ApiLinkController;
 use WerdsWords\LinkStack\SharedProfiles\ServiceProvider;
+use WerdsWords\LinkStack\SharedProfiles\Services\TelegramNotificationService;
 use WerdsWords\LinkStack\SharedProfiles\Tests\Support\Models\Link;
 use WerdsWords\LinkStack\SharedProfiles\Tests\Support\Models\User;
 
@@ -55,6 +57,7 @@ final class ApiLinkControllerTest extends TestCase
             $table->string('name');
             $table->string('email')->unique();
             $table->string('api_token', 80)->unique()->nullable();
+            $table->string('telegram_bot_token')->nullable();
             $table->boolean('auto_approve')->nullable();
             $table->timestamps();
         });
@@ -79,7 +82,18 @@ final class ApiLinkControllerTest extends TestCase
             $table->timestamps();
         });
 
+        Schema::create('telegram_managers', function (Blueprint $table) {
+            $table->id();
+            $table->string('telegram_id')->unique();
+            $table->unsignedBigInteger('profile_id');
+            $table->foreign('profile_id')->references('id')->on('users')->onDelete('cascade');
+            $table->enum('role', ['owner', 'moderator'])->default('moderator');
+            $table->unsignedBigInteger('added_by')->nullable();
+            $table->timestamp('created_at')->useCurrent();
+        });
+
         $this->beforeApplicationDestroyed(function () {
+            Schema::dropIfExists('telegram_managers');
             Schema::dropIfExists('links');
             Schema::dropIfExists('buttons');
             Schema::dropIfExists('users');
@@ -119,6 +133,15 @@ final class ApiLinkControllerTest extends TestCase
             'title' => 'My Link',
             'button_id' => $buttonId,
         ];
+    }
+
+    private function createManager(int $profileId, string $telegramId): void
+    {
+        DB::table('telegram_managers')->insert([
+            'telegram_id' => $telegramId,
+            'profile_id' => $profileId,
+            'role' => 'moderator',
+        ]);
     }
 
     private function createLink(
@@ -488,5 +511,45 @@ final class ApiLinkControllerTest extends TestCase
             ['link' => 'https://example.com', 'title' => 'T', 'button_id' => 1, 'meta' => 'string'],
             'meta',
         ];
+    }
+
+    // -------------------------------------------------------------------------
+    // store() — moderator notifications
+    // -------------------------------------------------------------------------
+
+    public function testStoreNotifiesModeratorsOnPendingLink(): void
+    {
+        [$user, $token] = $this->userWithToken();
+        $buttonId = $this->buttonId();
+        $this->createManager($user->id, '11111111');
+
+        $mock = Mockery::mock(TelegramNotificationService::class);
+        $mock->shouldReceive('notifyModerators')
+            ->once()
+            ->withArgs(fn ($profileId, $linkId, $link, $title) => $profileId === $user->id
+                && $link === 'https://example.com'
+                && $title === 'My Link');
+        $this->app->instance(TelegramNotificationService::class, $mock);
+
+        $this->withToken($token)
+            ->postJson('/api/links', $this->validPayload($buttonId))
+            ->assertStatus(201);
+    }
+
+    public function testStoreDoesNotNotifyModeratorsWhenAutoApproved(): void
+    {
+        $this->app['config']->set('linkstack-shared-profiles.auto_approve', true);
+
+        [$user, $token] = $this->userWithToken();
+        $buttonId = $this->buttonId();
+        $this->createManager($user->id, '11111111');
+
+        $mock = Mockery::mock(TelegramNotificationService::class);
+        $mock->shouldReceive('notifyModerators')->never();
+        $this->app->instance(TelegramNotificationService::class, $mock);
+
+        $this->withToken($token)
+            ->postJson('/api/links', $this->validPayload($buttonId))
+            ->assertStatus(201);
     }
 }
