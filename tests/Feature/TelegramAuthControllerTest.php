@@ -140,6 +140,17 @@ final class TelegramAuthControllerTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // Moderator Mini App — GET /telegram-app/moderate
+    // -------------------------------------------------------------------------
+
+    public function testModerateAppRouteReturns200(): void
+    {
+        // The view posts initData to POST /telegram-login client-side;
+        // server-side it is just a Blade view with no auth requirement.
+        $this->get('/telegram-app/moderate')->assertStatus(200);
+    }
+
+    // -------------------------------------------------------------------------
     // Approach A — redirect()
     // -------------------------------------------------------------------------
 
@@ -325,7 +336,7 @@ final class TelegramAuthControllerTest extends TestCase
 
         $this->postJson('/telegram-login', ['init_data' => $initData])
             ->assertStatus(200)
-            ->assertJson(['redirect' => '/studio/index']);
+            ->assertJson(['redirect' => '/studio/moderation']);
 
         $this->assertAuthenticated();
     }
@@ -351,7 +362,7 @@ final class TelegramAuthControllerTest extends TestCase
 
         $this->postJson('/telegram-login', ['init_data' => $initData])
             ->assertStatus(200)
-            ->assertJson(['redirect' => '/studio/index']);
+            ->assertJson(['redirect' => '/studio/moderation']);
 
         $this->assertAuthenticated();
     }

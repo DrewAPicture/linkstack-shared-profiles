@@ -120,7 +120,7 @@ class TelegramAuthController extends Controller
         Auth::loginUsingId($manager->profile_id);
         $request->session()->regenerate();
 
-        return response()->json(['redirect' => '/studio/index']);
+        return response()->json(['redirect' => '/studio/moderation']);
     }
 
     /**

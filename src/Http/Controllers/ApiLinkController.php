@@ -7,9 +7,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use WerdsWords\LinkStack\SharedProfiles\Services\TelegramNotificationService;
 
 class ApiLinkController extends Controller
 {
+    public function __construct(private readonly TelegramNotificationService $notificationService) {}
+
     public function index(Request $request): JsonResponse
     {
         $user = $this->resolveUser($request);
@@ -52,18 +55,31 @@ class ApiLinkController extends Controller
             ? $perUser
             : config('linkstack-shared-profiles.auto_approve');
 
-        DB::table('links')->insert([
+        $status = $autoApprove ? 'published' : 'pending';
+
+        $linkId = DB::table('links')->insertGetId([
             'user_id' => $user->getKey(),
             'link' => $validated['link'],
             'title' => $validated['title'],
             'button_id' => $validated['button_id'],
             'type' => 'predefined',
             'type_params' => isset($validated['meta']) ? json_encode($validated['meta']) : null,
-            'status' => $autoApprove ? 'published' : 'pending',
+            'status' => $status,
             'order' => 999,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        if ($status === 'pending') {
+            /** @var int $profileId */
+            $profileId = $user->getKey();
+            $this->notificationService->notifyModerators(
+                $profileId,
+                $linkId,
+                $validated['link'],
+                $validated['title']
+            );
+        }
 
         return response()->json(['status' => 'queued'], 201);
     }

@@ -214,6 +214,55 @@ The file will be published to `resources/views/vendor/linkstack-shared-profiles/
 
 ---
 
+## Telegram Bot Setup
+
+Run the following once per installation to connect the bot to your server.
+
+### Webhook registration
+
+Register the webhook with Telegram so updates are pushed to your application:
+
+```bash
+curl -X POST "https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setWebhook" \
+  -d "url=https://yourdomain.com/telegram/webhook" \
+  -d "secret_token={TELEGRAM_WEBHOOK_SECRET}" \
+  -d "allowed_updates=[\"message\",\"callback_query\"]"
+```
+
+Each incoming update will carry an `X-Telegram-Bot-Api-Secret-Token` header. The package validates it against `TELEGRAM_WEBHOOK_SECRET` and returns `403` if it does not match.
+
+The webhook handles two update types:
+
+- **`message`** — Responds to the `/auth` command by sending the moderator a private DM with a login button.
+- **`callback_query`** — Handles `approve:{id}` and `reject:{id}` inline button taps from moderator notification messages.
+
+### Contributor Mini App registration
+
+Run once per group. Links submitted through the Mini App are routed to a profile by matching `initData.chat.id` against `users.telegram_group_chat_id`, so that column must be set before the bot can accept submissions.
+
+**1. Set the group chat ID on the profile:**
+
+```bash
+php artisan tinker
+\App\Models\User::find($profileId)->update(['telegram_group_chat_id' => '-1001234567890']);
+```
+
+**2. Register the Mini App as the group's menu button:**
+
+```bash
+curl -X POST "https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setChatMenuButton" \
+  -d "chat_id={GROUP_CHAT_ID}" \
+  -d 'menu_button={"type":"web_app","text":"Submit a Link","web_app":{"url":"https://yourdomain.com/telegram-app/submit"}}'
+```
+
+Members can then open the form from the button in the message bar. `initData.chat.id` is automatically set to the group's ID, so submissions from different groups are routed to the correct profile without any additional configuration.
+
+### Moderator Mini App
+
+The moderator Mini App at `/telegram-app/moderate` does not require a menu button registration — it is accessed by sharing the URL directly with known moderators or linking to it from a pinned message. It authenticates using the existing `POST /telegram-login` endpoint, establishes a Laravel session, and redirects to `/studio/moderation`.
+
+---
+
 ## Configuration
 
 Publish the config file if you want to modify defaults:
@@ -224,9 +273,11 @@ php artisan vendor:publish --tag=linkstack-shared-profiles
 
 | Key | Env var | Default | Description |
 |---|---|---|---|
-| `bot_token` | `TELEGRAM_BOT_TOKEN` | — | Global fallback bot token for Telegram HMAC verification |
-| `auto_approve` | `LINKSTACK_SHARED_PROFILES_AUTO_APPROVE` | `false` | Publish API-submitted links immediately instead of queuing them. Can be overridden per profile via `users.auto_approve`. |
+| `bot_token` | `TELEGRAM_BOT_TOKEN` | — | Global fallback bot token used for HMAC verification and sending messages when no per-profile token is set |
+| `auto_approve` | `LINKSTACK_SHARED_PROFILES_AUTO_APPROVE` | `false` | Publish submitted links immediately instead of queuing them. Can be overridden per profile via `users.auto_approve`. |
 | `auth_date_ttl` | — | `300` | Seconds before a Telegram Mini App `initData` payload is considered stale |
+| `default_button_id` | `TELEGRAM_DEFAULT_BUTTON_ID` | — | `buttons.id` assigned to every link submitted via the Telegram contributor Mini App |
+| `webhook_secret` | `TELEGRAM_WEBHOOK_SECRET` | — | Shared secret validated against the `X-Telegram-Bot-Api-Secret-Token` header on incoming webhook updates |
 
 ---
 
