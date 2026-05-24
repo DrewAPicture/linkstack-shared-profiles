@@ -39,10 +39,11 @@ src/
     ServiceProvider.php
 
 database/migrations/
-  2024_01_01_000001_add_api_token_to_users_table.php
-  2024_01_01_000002_add_status_to_links_table.php
-  2026_05_24_000001_create_provider_managers_table.php
-  2026_05_24_000002_create_provider_settings_table.php
+  2026_05_24_000001_add_api_token_to_users_table.php
+  2026_05_24_000002_add_status_to_links_table.php
+  2026_05_24_000003_add_auto_approve_to_users_table.php
+  2026_05_24_000004_create_provider_managers_table.php
+  2026_05_24_000005_create_provider_settings_table.php
 
 routes/
   api.php    POST /api/links (throttle)
@@ -98,7 +99,7 @@ The filter is additive: if the `status` column doesn't exist yet (migration not 
 
 | Column | Type | Notes |
 |---|---|---|
-| `api_token` | `string(80)` | Unique, nullable. Used by `POST /api/links` bearer auth. |
+| `api_token` | `string(64)` | Unique, nullable. Stored as a SHA-256 hash of the raw token. The raw token is sent by the client in the `Authorization: Bearer` header; the package hashes it before lookup. |
 | `auto_approve` | `boolean` | Nullable. Per-profile auto-approve override. Falls back to `linkstack-shared-profiles.auto_approve` config when null. |
 
 ### `links` table additions
@@ -128,7 +129,7 @@ Unique constraint on `(provider, external_id)`. Use `ProviderManager::forProvide
 | `id` | auto-increment PK | |
 | `profile_id` | `unsignedBigInteger` | FK → `users.id` (cascade delete) |
 | `provider` | `string` | Provider slug |
-| `settings` | `json` | Provider-specific config; cast to `array` on the model |
+| `settings` | `text` | Provider-specific config; encrypted at rest via `encrypted:array` cast — reads/writes as a plain PHP array. Values are shielded from stack traces via `#[SensitiveParameter]` on the internal setter. |
 
 Unique constraint on `(profile_id, provider)` — one row per provider per profile. Use `ProviderSetting::forProvider('telegram')` scope and the Eloquent toolkit directly.
 
