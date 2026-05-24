@@ -11,11 +11,10 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use SensitiveParameter;
-use WerdsWords\LinkStack\SharedProfiles\Services\TelegramNotificationService;
+use WerdsWords\LinkStack\SharedProfiles\Events\PendingLinkSubmitted;
 
 class TelegramSubmitController extends Controller
 {
-    public function __construct(private readonly TelegramNotificationService $notificationService) {}
 
     /**
      * Serve the contributor Mini App view.
@@ -120,7 +119,7 @@ class TelegramSubmitController extends Controller
         ]);
 
         if ($status === 'pending') {
-            $this->notificationService->notifyModerators($profileId, $linkId, $validated['link'], $validated['title']);
+            event(new PendingLinkSubmitted($profileId, $linkId, $validated['link'], $validated['title']));
         }
 
         return response()->json(['status' => 'queued'], 201);
