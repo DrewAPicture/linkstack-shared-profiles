@@ -9,10 +9,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Testing\TestResponse;
 use Laravel\Socialite\SocialiteServiceProvider;
+use Mockery;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use WerdsWords\LinkStack\SharedProfiles\Http\Controllers\TelegramWebhookController;
 use WerdsWords\LinkStack\SharedProfiles\ServiceProvider;
+use WerdsWords\LinkStack\SharedProfiles\Services\TelegramMessagingService;
 use WerdsWords\LinkStack\SharedProfiles\Tests\Support\Models\User;
 
 #[CoversClass(TelegramWebhookController::class)]
@@ -184,5 +186,60 @@ final class TelegramWebhookControllerTest extends TestCase
     public function testValidSecretWithUnknownUpdateTypeReturns200(): void
     {
         $this->postWebhook([])->assertStatus(200);
+    }
+
+    // -------------------------------------------------------------------------
+    // handleMessage() — /auth command
+    // -------------------------------------------------------------------------
+
+    public function testAuthCommandFromKnownManagerSendsDm(): void
+    {
+        $user = $this->createUser();
+        $this->createManager($user->id, '12345678');
+
+        $mock = Mockery::mock(TelegramMessagingService::class);
+        $mock->shouldReceive('sendMessageWithKeyboard')
+            ->once()
+            ->withArgs(fn ($token, $chatId, $text, $keyboard) => $chatId === '12345678'
+                && str_contains($keyboard[0][0]['url'] ?? '', '/telegram-auth/'.$user->id));
+        $this->app->instance(TelegramMessagingService::class, $mock);
+
+        $this->postWebhook($this->messageUpdate('/auth'))->assertStatus(200);
+    }
+
+    public function testAuthCommandUsesConfiguredButtonLabel(): void
+    {
+        $this->app['config']->set('linkstack-shared-profiles.auth_button_label', 'Accedi a LinkStack');
+        $user = $this->createUser();
+        $this->createManager($user->id, '12345678');
+
+        $mock = Mockery::mock(TelegramMessagingService::class);
+        $mock->shouldReceive('sendMessageWithKeyboard')
+            ->once()
+            ->withArgs(fn ($token, $chatId, $text, $keyboard) => ($keyboard[0][0]['text'] ?? '') === 'Accedi a LinkStack');
+        $this->app->instance(TelegramMessagingService::class, $mock);
+
+        $this->postWebhook($this->messageUpdate('/auth'))->assertStatus(200);
+    }
+
+    public function testAuthCommandFromUnknownUserIsIgnored(): void
+    {
+        $mock = Mockery::mock(TelegramMessagingService::class);
+        $mock->shouldReceive('sendMessageWithKeyboard')->never();
+        $this->app->instance(TelegramMessagingService::class, $mock);
+
+        $this->postWebhook($this->messageUpdate('/auth', '9999999'))->assertStatus(200);
+    }
+
+    public function testNonAuthTextIsIgnored(): void
+    {
+        $user = $this->createUser();
+        $this->createManager($user->id, '12345678');
+
+        $mock = Mockery::mock(TelegramMessagingService::class);
+        $mock->shouldReceive('sendMessageWithKeyboard')->never();
+        $this->app->instance(TelegramMessagingService::class, $mock);
+
+        $this->postWebhook($this->messageUpdate('hello'))->assertStatus(200);
     }
 }

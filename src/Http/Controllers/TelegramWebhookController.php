@@ -7,9 +7,15 @@ namespace WerdsWords\LinkStack\SharedProfiles\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
+use SensitiveParameter;
+use WerdsWords\LinkStack\SharedProfiles\Models\TelegramManager;
+use WerdsWords\LinkStack\SharedProfiles\Services\TelegramMessagingService;
 
 class TelegramWebhookController extends Controller
 {
+    public function __construct(private readonly TelegramMessagingService $messagingService) {}
+
     public function handle(Request $request): JsonResponse
     {
         /** @var string|null $secret */
@@ -34,10 +40,49 @@ class TelegramWebhookController extends Controller
     /**
      * @param  array<string, mixed>  $message
      */
-    private function handleMessage(array $message): void {}
+    private function handleMessage(array $message): void
+    {
+        if (($message['text'] ?? '') !== '/auth') {
+            return;
+        }
+
+        /** @var array{id?: int|string, username?: string} $from */
+        $from = is_array($message['from'] ?? null) ? $message['from'] : [];
+        $telegramId = (string) ($from['id'] ?? '');
+
+        $manager = TelegramManager::where('telegram_id', $telegramId)->first();
+        if (! $manager) {
+            return;
+        }
+
+        $loginUrl = config('app.url').'/telegram-auth/'.$manager->profile_id;
+        $botToken = $this->resolveToken($manager->profile_id);
+
+        /** @var string $buttonLabel */
+        $buttonLabel = config('linkstack-shared-profiles.auth_button_label', 'Log in to LinkStack');
+
+        $this->messagingService->sendMessageWithKeyboard(
+            $botToken,
+            $telegramId,
+            'Use the button below to log in to your LinkStack profile.',
+            [[['text' => $buttonLabel, 'url' => $loginUrl]]]
+        );
+    }
 
     /**
      * @param  array<string, mixed>  $query
      */
     private function handleCallbackQuery(array $query): void {}
+
+    private function resolveToken(#[SensitiveParameter] int $profileId): string
+    {
+        $perProfile = DB::table('users')->where('id', $profileId)->value('telegram_bot_token');
+
+        /** @var string $token */
+        $token = is_string($perProfile) && $perProfile !== ''
+            ? $perProfile
+            : config('linkstack-shared-profiles.bot_token');
+
+        return $token;
+    }
 }
