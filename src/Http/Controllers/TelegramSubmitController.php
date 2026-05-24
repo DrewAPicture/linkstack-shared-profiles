@@ -11,9 +11,13 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use SensitiveParameter;
+use WerdsWords\LinkStack\SharedProfiles\Models\TelegramManager;
+use WerdsWords\LinkStack\SharedProfiles\Services\TelegramMessagingService;
 
 class TelegramSubmitController extends Controller
 {
+    public function __construct(private readonly TelegramMessagingService $messagingService) {}
+
     /**
      * Serve the contributor Mini App view.
      */
@@ -103,7 +107,7 @@ class TelegramSubmitController extends Controller
         /** @var int $defaultButtonId */
         $defaultButtonId = config('linkstack-shared-profiles.default_button_id');
 
-        DB::table('links')->insert([
+        $linkId = DB::table('links')->insertGetId([
             'user_id' => $profileId,
             'link' => $validated['link'],
             'title' => $validated['title'],
@@ -116,7 +120,29 @@ class TelegramSubmitController extends Controller
             'updated_at' => now(),
         ]);
 
+        if ($status === 'pending') {
+            $this->notifyModerators($profileId, $linkId, $validated['link'], $validated['title']);
+        }
+
         return response()->json(['status' => 'queued'], 201);
+    }
+
+    private function notifyModerators(int $profileId, int $linkId, string $link, string $title): void
+    {
+        $managers = TelegramManager::where('profile_id', $profileId)->get();
+        $botToken = $this->resolveToken($profileId);
+
+        foreach ($managers as $manager) {
+            $this->messagingService->sendMessageWithKeyboard(
+                $botToken,
+                $manager->telegram_id,
+                "New pending link:\n{$title}\n{$link}",
+                [[
+                    ['text' => '✅ Approve', 'callback_data' => "approve:{$linkId}"],
+                    ['text' => '❌ Reject', 'callback_data' => "reject:{$linkId}"],
+                ]]
+            );
+        }
     }
 
     /**

@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace WerdsWords\LinkStack\SharedProfiles\Tests\Feature;
 
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Laravel\Socialite\SocialiteServiceProvider;
+use Mockery;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use SensitiveParameter;
 use WerdsWords\LinkStack\SharedProfiles\Http\Controllers\TelegramSubmitController;
 use WerdsWords\LinkStack\SharedProfiles\ServiceProvider;
+use WerdsWords\LinkStack\SharedProfiles\Services\TelegramMessagingService;
 use WerdsWords\LinkStack\SharedProfiles\Tests\Support\Models\User;
 
 #[CoversClass(TelegramSubmitController::class)]
@@ -82,7 +85,18 @@ final class TelegramSubmitControllerTest extends TestCase
             $table->timestamps();
         });
 
+        Schema::create('telegram_managers', function (Blueprint $table) {
+            $table->id();
+            $table->string('telegram_id')->unique();
+            $table->unsignedBigInteger('profile_id');
+            $table->foreign('profile_id')->references('id')->on('users')->onDelete('cascade');
+            $table->enum('role', ['owner', 'moderator'])->default('moderator');
+            $table->unsignedBigInteger('added_by')->nullable();
+            $table->timestamp('created_at')->useCurrent();
+        });
+
         $this->beforeApplicationDestroyed(function () {
+            Schema::dropIfExists('telegram_managers');
             Schema::dropIfExists('links');
             Schema::dropIfExists('users');
         });
@@ -101,6 +115,15 @@ final class TelegramSubmitControllerTest extends TestCase
             'telegram_bot_token' => $botToken,
             'auto_approve' => $autoApprove,
         ], fn ($v) => $v !== null));
+    }
+
+    private function createManager(int $profileId, string $telegramId, string $role = 'moderator'): void
+    {
+        DB::table('telegram_managers')->insert([
+            'telegram_id' => $telegramId,
+            'profile_id' => $profileId,
+            'role' => $role,
+        ]);
     }
 
     /**
@@ -299,5 +322,54 @@ final class TelegramSubmitControllerTest extends TestCase
         $this->postJson('/telegram/submit', $this->validPayload())
             ->assertStatus(403)
             ->assertJson(['error' => 'Invalid signature']);
+    }
+
+    // -------------------------------------------------------------------------
+    // store() — moderator notifications
+    // -------------------------------------------------------------------------
+
+    public function testStoreNotifiesModeratorsOnPendingLink(): void
+    {
+        $user = $this->createUser();
+        $this->createManager($user->id, '11111111');
+
+        $mock = Mockery::mock(TelegramMessagingService::class);
+        $mock->shouldReceive('sendMessageWithKeyboard')
+            ->once()
+            ->withArgs(fn ($token, $chatId, $text, $keyboard) => $token === self::BOT_TOKEN
+                && $chatId === '11111111'
+                && str_contains($text, 'My Twitter')
+                && str_contains($text, 'https://twitter.com/example'));
+        $this->app->instance(TelegramMessagingService::class, $mock);
+
+        $this->postJson('/telegram/submit', $this->validPayload())
+            ->assertStatus(201);
+    }
+
+    public function testStoreNotifiesAllModeratorsOnPendingLink(): void
+    {
+        $user = $this->createUser();
+        $this->createManager($user->id, '11111111');
+        $this->createManager($user->id, '22222222');
+
+        $mock = Mockery::mock(TelegramMessagingService::class);
+        $mock->shouldReceive('sendMessageWithKeyboard')->twice()->andReturn(true);
+        $this->app->instance(TelegramMessagingService::class, $mock);
+
+        $this->postJson('/telegram/submit', $this->validPayload())
+            ->assertStatus(201);
+    }
+
+    public function testStoreDoesNotNotifyModeratorsWhenAutoApproved(): void
+    {
+        $user = $this->createUser(autoApprove: true);
+        $this->createManager($user->id, '11111111');
+
+        $mock = Mockery::mock(TelegramMessagingService::class);
+        $mock->shouldReceive('sendMessageWithKeyboard')->never();
+        $this->app->instance(TelegramMessagingService::class, $mock);
+
+        $this->postJson('/telegram/submit', $this->validPayload())
+            ->assertStatus(201);
     }
 }
