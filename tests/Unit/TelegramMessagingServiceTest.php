@@ -155,4 +155,55 @@ final class TelegramMessagingServiceTest extends TestCase
 
         $this->assertFalse($result);
     }
+
+    // -------------------------------------------------------------------------
+    // editMessageText()
+    // -------------------------------------------------------------------------
+
+    public function testEditMessageTextPostsToCorrectTelegramApiUrl(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true], 200)]);
+
+        $service = new TelegramMessagingService;
+        $service->editMessageText('my-bot-token', '12345678', 99, 'Updated text');
+
+        Http::assertSent(
+            fn ($request) => $request->url() === 'https://api.telegram.org/botmy-bot-token/editMessageText'
+        );
+    }
+
+    public function testEditMessageTextIncludesChatIdMessageIdTextAndEmptyKeyboard(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true], 200)]);
+
+        $service = new TelegramMessagingService;
+        $service->editMessageText('my-bot-token', '12345678', 99, 'Updated text');
+
+        Http::assertSent(function ($request) {
+            return $request['chat_id'] === '12345678'
+                && $request['message_id'] === 99
+                && $request['text'] === 'Updated text'
+                && $request['reply_markup'] === ['inline_keyboard' => []];
+        });
+    }
+
+    public function testEditMessageTextReturnsTrueOnSuccess(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true], 200)]);
+
+        $service = new TelegramMessagingService;
+        $result = $service->editMessageText('my-bot-token', '12345678', 99, 'Updated text');
+
+        $this->assertTrue($result);
+    }
+
+    public function testEditMessageTextReturnsFalseOnApiError(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => false], 400)]);
+
+        $service = new TelegramMessagingService;
+        $result = $service->editMessageText('my-bot-token', '12345678', 99, 'Updated text');
+
+        $this->assertFalse($result);
+    }
 }

@@ -45,4 +45,24 @@ class TelegramMessagingService
 
         return $response->successful();
     }
+
+    /**
+     * Edit the text of a sent message and remove its inline keyboard.
+     *
+     * @param  int|string  $chatId  Telegram chat ID (numeric user ID or @username)
+     */
+    public function editMessageText(#[SensitiveParameter] string $botToken, int|string $chatId, int $messageId, string $text): bool
+    {
+        $response = Http::post(
+            self::API_BASE."/bot{$botToken}/editMessageText",
+            [
+                'chat_id' => $chatId,
+                'message_id' => $messageId,
+                'text' => $text,
+                'reply_markup' => ['inline_keyboard' => []],
+            ]
+        );
+
+        return $response->successful();
+    }
 }
