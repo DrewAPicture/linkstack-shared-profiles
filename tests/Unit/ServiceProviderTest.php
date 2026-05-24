@@ -130,7 +130,8 @@ final class ServiceProviderTest extends TestCase
     #[CoversMethod(ServiceProvider::class, 'registeredNotifiers')]
     public function testRegisterNotifierAddsToRegistry(): void
     {
-        $stub = new class implements NotifierContract {
+        $stub = new class implements NotifierContract
+        {
             public function notifyModerators(int $profileId, int $linkId, string $link, string $title): void {}
         };
 
@@ -144,10 +145,12 @@ final class ServiceProviderTest extends TestCase
     #[CoversMethod(ServiceProvider::class, 'registeredNotifiers')]
     public function testMultipleNotifiersCanBeRegistered(): void
     {
-        $stubA = new class implements NotifierContract {
+        $stubA = new class implements NotifierContract
+        {
             public function notifyModerators(int $profileId, int $linkId, string $link, string $title): void {}
         };
-        $stubB = new class implements NotifierContract {
+        $stubB = new class implements NotifierContract
+        {
             public function notifyModerators(int $profileId, int $linkId, string $link, string $title): void {}
         };
 
@@ -160,7 +163,8 @@ final class ServiceProviderTest extends TestCase
     #[CoversMethod(ServiceProvider::class, 'flushNotifiers')]
     public function testFlushNotifiersClearsRegistry(): void
     {
-        $stub = new class implements NotifierContract {
+        $stub = new class implements NotifierContract
+        {
             public function notifyModerators(int $profileId, int $linkId, string $link, string $title): void {}
         };
 

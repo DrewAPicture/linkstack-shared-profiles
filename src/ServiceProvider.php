@@ -2,9 +2,12 @@
 
 namespace WerdsWords\LinkStack\SharedProfiles;
 
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
+use WerdsWords\LinkStack\SharedProfiles\Events\PendingLinkSubmitted;
 use WerdsWords\LinkStack\SharedProfiles\Providers\Contracts\NotifierContract;
+use WerdsWords\LinkStack\SharedProfiles\Providers\Listeners\NotifyProvidersOfPendingLink;
 
 class ServiceProvider extends BaseServiceProvider
 {
@@ -61,5 +64,7 @@ class ServiceProvider extends BaseServiceProvider
                 fn ($link) => ! isset($link->status) || $link->status === 'published'
             ));
         });
+
+        Event::listen(PendingLinkSubmitted::class, NotifyProvidersOfPendingLink::class);
     }
 }
