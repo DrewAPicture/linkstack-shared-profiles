@@ -6,15 +6,15 @@ namespace WerdsWords\LinkStack\SharedProfiles\Tests\Feature;
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Laravel\Socialite\SocialiteServiceProvider;
-use Mockery;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use SensitiveParameter;
+use WerdsWords\LinkStack\SharedProfiles\Events\PendingLinkSubmitted;
 use WerdsWords\LinkStack\SharedProfiles\Http\Controllers\TelegramSubmitController;
 use WerdsWords\LinkStack\SharedProfiles\ServiceProvider;
-use WerdsWords\LinkStack\SharedProfiles\Services\TelegramNotificationService;
 use WerdsWords\LinkStack\SharedProfiles\Tests\Support\Models\User;
 
 #[CoversClass(TelegramSubmitController::class)]
@@ -328,46 +328,29 @@ final class TelegramSubmitControllerTest extends TestCase
     // store() — moderator notifications
     // -------------------------------------------------------------------------
 
-    public function testStoreNotifiesModeratorsOnPendingLink(): void
+    public function testStoreFiresPendingLinkSubmittedEventOnPendingLink(): void
     {
+        Event::fake();
         $user = $this->createUser();
-        $this->createManager($user->id, '11111111');
-
-        $mock = Mockery::mock(TelegramNotificationService::class);
-        $mock->shouldReceive('notifyModerators')
-            ->once()
-            ->withArgs(fn ($profileId, $linkId, $link, $title) => $link === 'https://twitter.com/example'
-                && $title === 'My Twitter');
-        $this->app->instance(TelegramNotificationService::class, $mock);
 
         $this->postJson('/telegram/submit', $this->validPayload())
             ->assertStatus(201);
+
+        Event::assertDispatched(PendingLinkSubmitted::class, function (PendingLinkSubmitted $event) use ($user) {
+            return $event->profileId === $user->id
+                && $event->link === 'https://twitter.com/example'
+                && $event->title === 'My Twitter';
+        });
     }
 
-    public function testStoreNotifiesAllModeratorsOnPendingLink(): void
+    public function testStoreDoesNotFireEventWhenAutoApproved(): void
     {
-        $user = $this->createUser();
-        $this->createManager($user->id, '11111111');
-        $this->createManager($user->id, '22222222');
-
-        $mock = Mockery::mock(TelegramNotificationService::class);
-        $mock->shouldReceive('notifyModerators')->once();
-        $this->app->instance(TelegramNotificationService::class, $mock);
-
-        $this->postJson('/telegram/submit', $this->validPayload())
-            ->assertStatus(201);
-    }
-
-    public function testStoreDoesNotNotifyModeratorsWhenAutoApproved(): void
-    {
+        Event::fake();
         $user = $this->createUser(autoApprove: true);
-        $this->createManager($user->id, '11111111');
-
-        $mock = Mockery::mock(TelegramNotificationService::class);
-        $mock->shouldReceive('notifyModerators')->never();
-        $this->app->instance(TelegramNotificationService::class, $mock);
 
         $this->postJson('/telegram/submit', $this->validPayload())
             ->assertStatus(201);
+
+        Event::assertNotDispatched(PendingLinkSubmitted::class);
     }
 }

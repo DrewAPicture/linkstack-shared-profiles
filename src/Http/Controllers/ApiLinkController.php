@@ -11,7 +11,6 @@ use WerdsWords\LinkStack\SharedProfiles\Events\PendingLinkSubmitted;
 
 class ApiLinkController extends Controller
 {
-
     public function index(Request $request): JsonResponse
     {
         $user = $this->resolveUser($request);

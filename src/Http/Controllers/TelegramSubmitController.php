@@ -15,7 +15,6 @@ use WerdsWords\LinkStack\SharedProfiles\Events\PendingLinkSubmitted;
 
 class TelegramSubmitController extends Controller
 {
-
     /**
      * Serve the contributor Mini App view.
      */
