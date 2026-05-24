@@ -6,6 +6,7 @@ namespace WerdsWords\LinkStack\SharedProfiles\Providers\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use SensitiveParameter;
 
 /**
  * @property int $id
@@ -41,7 +42,7 @@ class ProviderSetting extends Model
         return parent::setAttribute($key, $value);
     }
 
-    private function setSettingsValue(#[\SensitiveParameter] mixed $value): mixed
+    private function setSettingsValue(#[SensitiveParameter] mixed $value): mixed
     {
         return parent::setAttribute('settings', $value);
     }

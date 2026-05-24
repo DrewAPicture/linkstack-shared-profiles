@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Schema;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\CoversMethod;
+use ReflectionMethod;
+use SensitiveParameter;
 use WerdsWords\LinkStack\SharedProfiles\Providers\Models\ProviderSetting;
 use WerdsWords\LinkStack\SharedProfiles\ServiceProvider;
 
@@ -67,10 +69,10 @@ final class ProviderSettingTest extends TestCase
 
     public function testSetSettingsValueHasSensitiveParameterAttribute(): void
     {
-        $method = new \ReflectionMethod(ProviderSetting::class, 'setSettingsValue');
+        $method = new ReflectionMethod(ProviderSetting::class, 'setSettingsValue');
         $param = $method->getParameters()[0];
 
-        $this->assertNotEmpty($param->getAttributes(\SensitiveParameter::class));
+        $this->assertNotEmpty($param->getAttributes(SensitiveParameter::class));
     }
 
     // -------------------------------------------------------------------------
