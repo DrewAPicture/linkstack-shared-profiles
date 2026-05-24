@@ -4,6 +4,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Support\Facades\Route;
 use WerdsWords\LinkStack\SharedProfiles\Http\Controllers\ModerationController;
 use WerdsWords\LinkStack\SharedProfiles\Http\Controllers\TelegramAuthController;
+use WerdsWords\LinkStack\SharedProfiles\Http\Controllers\TelegramSubmitController;
 
 // Approach A: browser-based Telegram Login Widget
 // {profileId} encodes which profile is authenticating so the callback can
@@ -34,3 +35,14 @@ Route::post('/telegram-login', [TelegramAuthController::class, 'initDataLogin'])
     ->middleware('web')
     ->withoutMiddleware([VerifyCsrfToken::class])
     ->name('linkstack-shared-profiles.telegram.initdata');
+
+// Contributor Mini App — serves the submission form and receives submissions.
+// initData HMAC is the security layer; no session or CSRF token is needed.
+Route::middleware('web')->group(function () {
+    Route::get('/telegram-app/submit', [TelegramSubmitController::class, 'app'])
+        ->name('linkstack-shared-profiles.telegram-app.submit');
+
+    Route::post('/telegram/submit', [TelegramSubmitController::class, 'store'])
+        ->withoutMiddleware([VerifyCsrfToken::class])
+        ->name('linkstack-shared-profiles.telegram.submit');
+});
