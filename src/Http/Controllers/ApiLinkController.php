@@ -7,11 +7,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
-use WerdsWords\LinkStack\SharedProfiles\Services\TelegramNotificationService;
+use WerdsWords\LinkStack\SharedProfiles\Events\PendingLinkSubmitted;
 
 class ApiLinkController extends Controller
 {
-    public function __construct(private readonly TelegramNotificationService $notificationService) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -73,12 +72,7 @@ class ApiLinkController extends Controller
         if ($status === 'pending') {
             /** @var int $profileId */
             $profileId = $user->getKey();
-            $this->notificationService->notifyModerators(
-                $profileId,
-                $linkId,
-                $validated['link'],
-                $validated['title']
-            );
+            event(new PendingLinkSubmitted($profileId, $linkId, $validated['link'], $validated['title']));
         }
 
         return response()->json(['status' => 'queued'], 201);
