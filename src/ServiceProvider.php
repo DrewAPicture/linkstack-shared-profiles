@@ -2,10 +2,12 @@
 
 namespace WerdsWords\LinkStack\SharedProfiles;
 
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 use Laravel\Socialite\Contracts\Factory as Socialite;
 use SocialiteProviders\Telegram\Provider as TelegramProvider;
+use WerdsWords\LinkStack\SharedProfiles\Events\PendingLinkSubmitted;
 use WerdsWords\LinkStack\SharedProfiles\Services\TelegramMessagingService;
 use WerdsWords\LinkStack\SharedProfiles\Services\TelegramNotificationService;
 
@@ -18,7 +20,6 @@ class ServiceProvider extends BaseServiceProvider
         );
 
         $this->app->singleton(TelegramMessagingService::class, fn () => new TelegramMessagingService);
-        $this->app->singleton(TelegramNotificationService::class, fn ($app) => new TelegramNotificationService($app->make(TelegramMessagingService::class)));
     }
 
     public function boot(): void
@@ -53,5 +54,16 @@ class ServiceProvider extends BaseServiceProvider
             'telegram',
             fn ($app) => $app->make(TelegramProvider::class)
         );
+
+        $this->app->singleton(TelegramNotificationService::class, fn ($app) => new TelegramNotificationService($app->make(TelegramMessagingService::class)));
+
+        Event::listen(PendingLinkSubmitted::class, function (PendingLinkSubmitted $event): void {
+            $this->app->make(TelegramNotificationService::class)->notifyModerators(
+                $event->profileId,
+                $event->linkId,
+                $event->link,
+                $event->title,
+            );
+        });
     }
 }
