@@ -72,7 +72,68 @@ class TelegramWebhookController extends Controller
     /**
      * @param  array<string, mixed>  $query
      */
-    private function handleCallbackQuery(array $query): void {}
+    private function handleCallbackQuery(array $query): void
+    {
+        /** @var string $globalToken */
+        $globalToken = config('linkstack-shared-profiles.bot_token');
+        $rawQueryId = $query['id'] ?? '';
+        $this->messagingService->answerCallbackQuery($globalToken, is_string($rawQueryId) ? $rawQueryId : '');
+
+        $rawData = $query['data'] ?? '';
+        $data = is_string($rawData) ? $rawData : '';
+        if (! preg_match('/^(approve|reject):(\d+)$/', $data, $matches)) {
+            return;
+        }
+
+        $action = $matches[1];
+        $linkId = (int) $matches[2];
+
+        /** @var array{id?: int|string, username?: string} $from */
+        $from = is_array($query['from'] ?? null) ? $query['from'] : [];
+        $telegramId = (string) ($from['id'] ?? '');
+        $rawUsername = $from['username'] ?? null;
+        $username = is_string($rawUsername) ? $rawUsername : 'unknown';
+
+        $userId = DB::table('links')->where('id', $linkId)->value('user_id');
+        if (! is_numeric($userId)) {
+            return;
+        }
+
+        $profileId = (int) $userId;
+
+        $manager = TelegramManager::where('telegram_id', $telegramId)
+            ->where('profile_id', $profileId)
+            ->first();
+
+        if (! $manager) {
+            return;
+        }
+
+        $botToken = $this->resolveToken($profileId);
+
+        if ($action === 'approve') {
+            DB::table('links')
+                ->where('id', $linkId)
+                ->where('status', 'pending')
+                ->update(['status' => 'published']);
+            $statusText = "✅ Approved by @{$username}";
+        } else {
+            DB::table('links')
+                ->where('id', $linkId)
+                ->where('status', 'pending')
+                ->delete();
+            $statusText = "❌ Rejected by @{$username}";
+        }
+
+        /** @var array{message_id?: int, chat?: array{id?: int|string}} $message */
+        $message = is_array($query['message'] ?? null) ? $query['message'] : [];
+        $chatId = $message['chat']['id'] ?? null;
+        $messageId = $message['message_id'] ?? null;
+
+        if ($chatId !== null && $messageId !== null) {
+            $this->messagingService->editMessageText($botToken, $chatId, (int) $messageId, $statusText);
+        }
+    }
 
     private function resolveToken(#[SensitiveParameter] int $profileId): string
     {

@@ -242,4 +242,71 @@ final class TelegramWebhookControllerTest extends TestCase
 
         $this->postWebhook($this->messageUpdate('hello'))->assertStatus(200);
     }
+
+    // -------------------------------------------------------------------------
+    // handleCallbackQuery() — approve / reject
+    // -------------------------------------------------------------------------
+
+    public function testApproveCallbackPublishesLink(): void
+    {
+        $user = $this->createUser();
+        $this->createManager($user->id, '12345678');
+        $linkId = $this->createLink($user->id);
+
+        $mock = Mockery::mock(TelegramMessagingService::class);
+        $mock->shouldReceive('answerCallbackQuery')->once()->andReturn(true);
+        $mock->shouldReceive('editMessageText')
+            ->once()
+            ->withArgs(fn ($token, $chatId, $messageId, $text) => str_contains($text, '✅'));
+        $this->app->instance(TelegramMessagingService::class, $mock);
+
+        $this->postWebhook($this->callbackUpdate("approve:{$linkId}"))->assertStatus(200);
+
+        $this->assertDatabaseHas('links', ['id' => $linkId, 'status' => 'published']);
+    }
+
+    public function testRejectCallbackDeletesLink(): void
+    {
+        $user = $this->createUser();
+        $this->createManager($user->id, '12345678');
+        $linkId = $this->createLink($user->id);
+
+        $mock = Mockery::mock(TelegramMessagingService::class);
+        $mock->shouldReceive('answerCallbackQuery')->once()->andReturn(true);
+        $mock->shouldReceive('editMessageText')
+            ->once()
+            ->withArgs(fn ($token, $chatId, $messageId, $text) => str_contains($text, '❌'));
+        $this->app->instance(TelegramMessagingService::class, $mock);
+
+        $this->postWebhook($this->callbackUpdate("reject:{$linkId}"))->assertStatus(200);
+
+        $this->assertDatabaseMissing('links', ['id' => $linkId]);
+    }
+
+    public function testCallbackFromDifferentProfileModeratorIsIgnored(): void
+    {
+        $user = $this->createUser();
+        $other = $this->createUser('other@example.com');
+        $this->createManager($other->id, '12345678'); // moderator for OTHER profile
+        $linkId = $this->createLink($user->id);       // link belongs to $user
+
+        $mock = Mockery::mock(TelegramMessagingService::class);
+        $mock->shouldReceive('answerCallbackQuery')->once()->andReturn(true);
+        $mock->shouldReceive('editMessageText')->never();
+        $this->app->instance(TelegramMessagingService::class, $mock);
+
+        $this->postWebhook($this->callbackUpdate("approve:{$linkId}"))->assertStatus(200);
+
+        $this->assertDatabaseHas('links', ['id' => $linkId, 'status' => 'pending']);
+    }
+
+    public function testUnknownCallbackFormatAnswersAndReturns(): void
+    {
+        $mock = Mockery::mock(TelegramMessagingService::class);
+        $mock->shouldReceive('answerCallbackQuery')->once()->andReturn(true);
+        $mock->shouldReceive('editMessageText')->never();
+        $this->app->instance(TelegramMessagingService::class, $mock);
+
+        $this->postWebhook($this->callbackUpdate('unknown:format'))->assertStatus(200);
+    }
 }
