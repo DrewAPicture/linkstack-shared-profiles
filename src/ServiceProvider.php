@@ -5,6 +5,8 @@ namespace WerdsWords\LinkStack\SharedProfiles;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
+use RuntimeException;
+use WerdsWords\LinkStack\SharedProfiles\Contracts\ApiTokenableContract;
 use WerdsWords\LinkStack\SharedProfiles\Events\PendingLinkSubmitted;
 use WerdsWords\LinkStack\SharedProfiles\Providers\Contracts\NotifierContract;
 use WerdsWords\LinkStack\SharedProfiles\Providers\Listeners\NotifyProvidersOfPendingLink;
@@ -39,6 +41,15 @@ class ServiceProvider extends BaseServiceProvider
 
     public function boot(): void
     {
+        /** @var class-string $model */
+        $model = config('auth.providers.users.model');
+
+        if (! is_a($model, ApiTokenableContract::class, true)) {
+            throw new RuntimeException(
+                "{$model} must implement ApiTokenableContract. Apply the HasApiToken trait."
+            );
+        }
+
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 

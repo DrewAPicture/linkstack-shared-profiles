@@ -108,9 +108,10 @@ final class ApiLinkControllerTest extends TestCase
         $user = User::create(array_filter([
             'name' => 'Test User',
             'email' => 'test@example.com',
-            'api_token' => hash('sha256', $token),
             'auto_approve' => $autoApprove,
         ], fn ($v) => $v !== null));
+        $user->setApiToken($token);
+        $user->save();
 
         return [$user, $token];
     }
@@ -212,7 +213,9 @@ final class ApiLinkControllerTest extends TestCase
     public function testIndexExcludesOtherProfilesLinks(): void
     {
         [$user, $token] = $this->userWithToken();
-        $other = User::create(['name' => 'Other', 'email' => 'other@example.com', 'api_token' => hash('sha256', 'other-token')]);
+        $other = User::create(['name' => 'Other', 'email' => 'other@example.com']);
+        $other->setApiToken('other-token');
+        $other->save();
         $buttonId = $this->buttonId();
         $this->createLink($other->id, $buttonId, 'pending', 'https://example.com', 'Other Link');
 
@@ -274,7 +277,9 @@ final class ApiLinkControllerTest extends TestCase
     public function testApproveReturns404ForAnotherProfilesLink(): void
     {
         [, $token] = $this->userWithToken();
-        $other = User::create(['name' => 'Other', 'email' => 'other@example.com', 'api_token' => hash('sha256', 'other-token')]);
+        $other = User::create(['name' => 'Other', 'email' => 'other@example.com']);
+        $other->setApiToken('other-token');
+        $other->save();
         $buttonId = $this->buttonId();
         $linkId = $this->createLink($other->id, $buttonId, 'pending');
 
@@ -326,7 +331,9 @@ final class ApiLinkControllerTest extends TestCase
     public function testDenyReturns404ForAnotherProfilesLink(): void
     {
         [, $token] = $this->userWithToken();
-        $other = User::create(['name' => 'Other', 'email' => 'other@example.com', 'api_token' => hash('sha256', 'other-token')]);
+        $other = User::create(['name' => 'Other', 'email' => 'other@example.com']);
+        $other->setApiToken('other-token');
+        $other->save();
         $buttonId = $this->buttonId();
         $linkId = $this->createLink($other->id, $buttonId, 'pending');
 

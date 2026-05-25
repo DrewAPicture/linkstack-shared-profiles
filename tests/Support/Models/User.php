@@ -6,9 +6,13 @@ namespace WerdsWords\LinkStack\SharedProfiles\Tests\Support\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use WerdsWords\LinkStack\SharedProfiles\Concerns\HasApiToken;
+use WerdsWords\LinkStack\SharedProfiles\Contracts\ApiTokenableContract;
 
-class User extends Authenticatable
+class User extends Authenticatable implements ApiTokenableContract
 {
+    use HasApiToken;
+
     protected $fillable = ['name', 'email', 'api_token', 'telegram_bot_token', 'telegram_group_chat_id', 'auto_approve'];
 
     public function links(): HasMany

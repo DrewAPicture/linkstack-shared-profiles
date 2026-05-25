@@ -8,6 +8,24 @@ A provider package is responsible for:
 - Notifying managers when a pending link is submitted
 - Handling platform interaction payloads (webhook callbacks, slash commands, etc.)
 
+## User Model Requirement
+
+The host application's `User` model (configured as `auth.providers.users.model`) must implement `ApiTokenableContract`. The core package checks this at boot time and throws a `RuntimeException` if the contract is missing — it will not silently fail at the first API request.
+
+Apply the bundled `HasApiToken` trait, which handles SHA-256 hashing on storage and lookup:
+
+```php
+use WerdsWords\LinkStack\SharedProfiles\Concerns\HasApiToken;
+use WerdsWords\LinkStack\SharedProfiles\Contracts\ApiTokenableContract;
+
+class User extends Authenticatable implements ApiTokenableContract
+{
+    use HasApiToken;
+}
+```
+
+If your provider defines its own `User` model, extend the host app's conforming model rather than creating a parallel implementation.
+
 ## Service Provider
 
 Extend `Providers\ServiceProvider` instead of Laravel's base `ServiceProvider`:

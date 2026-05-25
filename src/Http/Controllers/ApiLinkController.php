@@ -7,6 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use WerdsWords\LinkStack\SharedProfiles\Contracts\ApiTokenableContract;
 use WerdsWords\LinkStack\SharedProfiles\Events\PendingLinkSubmitted;
 
 class ApiLinkController extends Controller
@@ -111,6 +112,7 @@ class ApiLinkController extends Controller
         return response()->json(['status' => 'denied']);
     }
 
+    /** @return Model&ApiTokenableContract */
     private function resolveUser(Request $request): Model
     {
         $token = $request->bearerToken();
@@ -119,9 +121,9 @@ class ApiLinkController extends Controller
             abort(401, 'Unauthenticated.');
         }
 
-        /** @var class-string<Model> $userModel */
+        /** @var class-string<Model&ApiTokenableContract> $userModel */
         $userModel = config('auth.providers.users.model');
-        $user = $userModel::where('api_token', hash('sha256', $token))->first();
+        $user = $userModel::forToken($token)->first();
 
         if (! $user) {
             abort(401, 'Invalid API token.');

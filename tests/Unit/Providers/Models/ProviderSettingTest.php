@@ -14,6 +14,7 @@ use ReflectionMethod;
 use SensitiveParameter;
 use WerdsWords\LinkStack\SharedProfiles\Providers\Models\ProviderSetting;
 use WerdsWords\LinkStack\SharedProfiles\ServiceProvider;
+use WerdsWords\LinkStack\SharedProfiles\Tests\Support\Models\User;
 
 #[CoversClass(ProviderSetting::class)]
 final class ProviderSettingTest extends TestCase
@@ -32,6 +33,7 @@ final class ProviderSettingTest extends TestCase
         $app['config']->set('database.connections.testing', [
             'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
         ]);
+        $app['config']->set('auth.providers.users.model', User::class);
     }
 
     protected function defineDatabaseMigrations(): void
