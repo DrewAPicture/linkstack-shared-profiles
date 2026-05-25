@@ -37,7 +37,7 @@ tests/
       PendingLinkSubmittedTest.php
   Unit/
     ServiceProviderTest.php
-    ServiceProviderBootTest.php  boot-time ApiTokenableContract check tests
+    ServiceProviderBootTest.php  boot-time HasApiTokenContract check tests
     Concerns/
       HasApiTokenTest.php
     Providers/
@@ -53,7 +53,7 @@ tests/
         AuthReplayGuardTest.php
   Support/
     Models/
-      User.php    extends Authenticatable; implements ApiTokenableContract via HasApiToken
+      User.php    extends Authenticatable; implements HasApiTokenContract via HasApiToken
       Link.php    extends Illuminate\Database\Eloquent\Model
     Middleware/
       AllowAll.php   no-op stub registered as 'blocked' alias in Testbench
@@ -120,7 +120,7 @@ Extends `Illuminate\Foundation\Auth\User` (which implements `Authenticatable`), 
 
 If the model only extends `Model`, `Auth::loginUsingId()` will still resolve the model but `login()` will type-error at runtime.
 
-This model also implements `ApiTokenableContract` via the `HasApiToken` trait. Any new test support User model must do the same, or the core `ServiceProvider::boot()` will throw a `RuntimeException` before tests can run.
+This model also implements `HasApiTokenContract` via the `HasApiToken` trait. Any new test support User model must do the same, or the core `ServiceProvider::boot()` will throw a `RuntimeException` before tests can run.
 
 ### `tests/Support/Middleware/AllowAll.php`
 
@@ -163,7 +163,7 @@ $route = $this->app['router']->getRoutes()->getByName('my.route');
 
 ### `auth.providers.users.model` must be set in every Testbench test that boots the core ServiceProvider
 
-`ServiceProvider::boot()` checks that the configured auth model implements `ApiTokenableContract` and throws if it doesn't. Any test class that registers the core `ServiceProvider` in `getPackageProviders()` must set:
+`ServiceProvider::boot()` checks that the configured auth model implements `HasApiTokenContract` and throws if it doesn't. Any test class that registers the core `ServiceProvider` in `getPackageProviders()` must set:
 
 ```php
 $app['config']->set('auth.providers.users.model', User::class);

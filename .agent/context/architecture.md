@@ -20,9 +20,9 @@ Auto-discovery via `extra.laravel.providers` in `composer.json` means `composer 
 src/
   ServiceProvider.php
   Concerns/
-    HasApiToken.php             trait implementing ApiTokenableContract
+    HasApiToken.php             trait implementing HasApiTokenContract
   Contracts/
-    ApiTokenableContract.php    interface: setApiToken(), scopeForToken()
+    HasApiTokenContract.php     interface: setApiToken(), scopeForToken()
   Events/
     PendingLinkSubmitted.php
   Http/Controllers/
@@ -72,7 +72,7 @@ The service provider is the **only** integration point with the host application
 
 | `boot()` call | Effect |
 |---|---|
-| `is_a($model, ApiTokenableContract::class, true)` | Checks auth user model implements `ApiTokenableContract`; throws `RuntimeException` if not |
+| `is_a($model, HasApiTokenContract::class, true)` | Checks auth user model implements `HasApiTokenContract`; throws `RuntimeException` if not |
 | `loadRoutesFrom(routes/web.php)` | Registers moderation routes |
 | `loadRoutesFrom(routes/api.php)` | Registers `POST /api/links` |
 | `loadMigrationsFrom(database/migrations)` | Auto-runs migrations on `artisan migrate` |
@@ -104,7 +104,7 @@ The filter is additive: if the `status` column doesn't exist yet (migration not 
 
 | Column | Type | Notes |
 |---|---|---|
-| `api_token` | `string(64)` | Unique, nullable. Stored as a SHA-256 hash of the raw token. The raw token is sent by the client in the `Authorization: Bearer` header; the package hashes it before lookup via `HasApiToken` trait / `ApiTokenableContract`. |
+| `api_token` | `string(64)` | Unique, nullable. Stored as a SHA-256 hash of the raw token. The raw token is sent by the client in the `Authorization: Bearer` header; the package hashes it before lookup via `HasApiToken` trait / `HasApiTokenContract`. |
 | `auto_approve` | `boolean` | Nullable. Per-profile auto-approve override. Falls back to `linkstack-shared-profiles.auto_approve` config when null. |
 
 ### `links` table additions

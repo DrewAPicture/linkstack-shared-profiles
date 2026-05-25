@@ -10,15 +10,15 @@ A provider package is responsible for:
 
 ## User Model Requirement
 
-The host application's `User` model (configured as `auth.providers.users.model`) must implement `ApiTokenableContract`. The core package checks this at boot time and throws a `RuntimeException` if the contract is missing — it will not silently fail at the first API request.
+The host application's `User` model (configured as `auth.providers.users.model`) must implement `HasApiTokenContract`. The core package checks this at boot time and throws a `RuntimeException` if the contract is missing — it will not silently fail at the first API request.
 
 Apply the bundled `HasApiToken` trait, which handles SHA-256 hashing on storage and lookup:
 
 ```php
 use WerdsWords\LinkStack\SharedProfiles\Concerns\HasApiToken;
-use WerdsWords\LinkStack\SharedProfiles\Contracts\ApiTokenableContract;
+use WerdsWords\LinkStack\SharedProfiles\Contracts\HasApiTokenContract;
 
-class User extends Authenticatable implements ApiTokenableContract
+class User extends Authenticatable implements HasApiTokenContract
 {
     use HasApiToken;
 }

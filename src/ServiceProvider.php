@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 use RuntimeException;
-use WerdsWords\LinkStack\SharedProfiles\Contracts\ApiTokenableContract;
+use WerdsWords\LinkStack\SharedProfiles\Contracts\HasApiTokenContract;
 use WerdsWords\LinkStack\SharedProfiles\Events\PendingLinkSubmitted;
 use WerdsWords\LinkStack\SharedProfiles\Providers\Contracts\NotifierContract;
 use WerdsWords\LinkStack\SharedProfiles\Providers\Listeners\NotifyProvidersOfPendingLink;
@@ -44,9 +44,9 @@ class ServiceProvider extends BaseServiceProvider
         /** @var class-string $model */
         $model = config('auth.providers.users.model');
 
-        if (! is_a($model, ApiTokenableContract::class, true)) {
+        if (! is_a($model, HasApiTokenContract::class, true)) {
             throw new RuntimeException(
-                "{$model} must implement ApiTokenableContract. Apply the HasApiToken trait."
+                "{$model} must implement HasApiTokenContract. Apply the HasApiToken trait."
             );
         }
 

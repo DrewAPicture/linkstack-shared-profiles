@@ -41,7 +41,7 @@ final class ServiceProviderBootTest extends TestCase
         $this->app['config']->set('auth.providers.users.model', $nonConforming::class);
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessageMatches('/must implement ApiTokenableContract/');
+        $this->expectExceptionMessageMatches('/must implement HasApiTokenContract/');
 
         $provider = new ServiceProvider($this->app);
         $provider->register();
