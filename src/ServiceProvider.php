@@ -5,7 +5,6 @@ namespace WerdsWords\LinkStack\SharedProfiles;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
-use RuntimeException;
 use WerdsWords\LinkStack\SharedProfiles\Contracts\HasApiTokenContract;
 use WerdsWords\LinkStack\SharedProfiles\Events\PendingLinkSubmitted;
 use WerdsWords\LinkStack\SharedProfiles\Providers\Contracts\NotifierContract;
@@ -37,19 +36,20 @@ class ServiceProvider extends BaseServiceProvider
         $this->mergeConfigFrom(
             __DIR__.'/../config/linkstack-shared-profiles.php', 'linkstack-shared-profiles'
         );
+
+        /** @var \Illuminate\Config\Repository $config */
+        $config = $this->app->make('config');
+
+        /** @var class-string $model */
+        $model = $config->get('auth.providers.users.model', '');
+
+        if (! is_a($model, HasApiTokenContract::class, true)) {
+            $config->set('auth.providers.users.model', Models\User::class);
+        }
     }
 
     public function boot(): void
     {
-        /** @var class-string $model */
-        $model = config('auth.providers.users.model');
-
-        if (! is_a($model, HasApiTokenContract::class, true)) {
-            throw new RuntimeException(
-                "{$model} must implement HasApiTokenContract. Apply the HasApiToken trait."
-            );
-        }
-
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 

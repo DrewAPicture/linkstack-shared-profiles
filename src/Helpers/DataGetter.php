@@ -14,7 +14,10 @@ final class DataGetter
             return $default;
         }
 
-        return (string) Arr::get($data, $key, $default);
+        /** @var array<string, mixed>|\ArrayAccess<string, mixed> $data */
+        $value = Arr::get($data, $key, $default);
+
+        return is_scalar($value) ? (string) $value : $default;
     }
 
     /**
@@ -27,6 +30,7 @@ final class DataGetter
             return $default;
         }
 
+        /** @var array<string, mixed>|\ArrayAccess<string, mixed> $data */
         $output = Arr::get($data, $key, $default);
 
         if (! Arr::accessible($output)) {

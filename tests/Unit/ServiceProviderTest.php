@@ -12,8 +12,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\CoversMethod;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use WerdsWords\LinkStack\SharedProfiles\Models\User as PackageUser;
 use WerdsWords\LinkStack\SharedProfiles\Providers\Contracts\NotifierContract;
 use WerdsWords\LinkStack\SharedProfiles\ServiceProvider;
+use WerdsWords\LinkStack\SharedProfiles\Tests\Support\Models\User as SupportUser;
 
 #[CoversClass(ServiceProvider::class)]
 #[CoversMethod(ServiceProvider::class, 'register')]
@@ -114,6 +116,34 @@ final class ServiceProviderTest extends TestCase
         $config = $this->loadedConfig();
 
         $this->assertSame($expected, $config->get("linkstack-shared-profiles.{$key}"));
+    }
+
+    // -------------------------------------------------------------------------
+    // register() — auth model
+    // -------------------------------------------------------------------------
+
+    public function testRegisterAutoSwapsAuthModelWhenModelDoesNotImplementContract(): void
+    {
+        $app = new Container;
+        $config = new Repository;
+        $config->set('auth.providers.users.model', \stdClass::class);
+        $app->instance('config', $config);
+
+        (new ServiceProvider($app))->register();
+
+        $this->assertSame(PackageUser::class, $config->get('auth.providers.users.model'));
+    }
+
+    public function testRegisterPreservesAuthModelWhenModelAlreadyImplementsContract(): void
+    {
+        $app = new Container;
+        $config = new Repository;
+        $config->set('auth.providers.users.model', SupportUser::class);
+        $app->instance('config', $config);
+
+        (new ServiceProvider($app))->register();
+
+        $this->assertSame(SupportUser::class, $config->get('auth.providers.users.model'));
     }
 
     // -------------------------------------------------------------------------

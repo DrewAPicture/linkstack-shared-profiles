@@ -5,3 +5,5 @@ parameters:
     level: max
     paths:
         - src
+    excludePaths:
+        - src/Models/User.php

@@ -7,7 +7,6 @@ namespace WerdsWords\LinkStack\SharedProfiles\Tests\Unit;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\CoversMethod;
-use RuntimeException;
 use WerdsWords\LinkStack\SharedProfiles\ServiceProvider;
 use WerdsWords\LinkStack\SharedProfiles\Tests\Support\Models\User;
 
@@ -33,18 +32,5 @@ final class ServiceProviderBootTest extends TestCase
         $provider->boot();
 
         $this->addToAssertionCount(1);
-    }
-
-    public function testBootThrowsWhenModelDoesNotImplementContract(): void
-    {
-        $nonConforming = new class {};
-        $this->app['config']->set('auth.providers.users.model', $nonConforming::class);
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessageMatches('/must implement HasApiTokenContract/');
-
-        $provider = new ServiceProvider($this->app);
-        $provider->register();
-        $provider->boot();
     }
 }
