@@ -19,6 +19,7 @@
                     <th scope="col">Title</th>
                     <th scope="col">URL</th>
                     <th scope="col">Button</th>
+                    <th scope="col">From</th>
                     <th scope="col">Submitted</th>
                     <th scope="col">Actions</th>
                 </tr>
@@ -29,6 +30,14 @@
                     <td>{{ $link->title }}</td>
                     <td><a href="{{ $link->link }}">{{ $link->link }}</a></td>
                     <td>{{ $link->button_name }}</td>
+                    <td>
+                        @if ($link->submitted_by)
+                            @php $submitter = json_decode($link->submitted_by); @endphp
+                            {{ isset($submitter->username) ? '@'.$submitter->username : $submitter->first_name }}
+                        @else
+                            —
+                        @endif
+                    </td>
                     <td>{{ $link->created_at }}</td>
                     <td>
                         <form method="POST" action="{{ route('linkstack-shared-profiles.approve', $link->id) }}">

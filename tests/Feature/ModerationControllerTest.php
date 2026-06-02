@@ -78,6 +78,7 @@ final class ModerationControllerTest extends TestCase
             $table->unsignedBigInteger('button_id');
             $table->string('type')->default('predefined');
             $table->text('type_params')->nullable();
+            $table->text('submitted_by')->nullable();
             $table->enum('status', ['pending', 'published', 'rejected'])->default('published');
             $table->integer('order')->default(999);
             $table->string('up_link')->nullable();
@@ -109,7 +110,7 @@ final class ModerationControllerTest extends TestCase
         ]);
     }
 
-    private function createLink(int $userId, int $buttonId, string $status = 'pending', string $title = 'My Link'): int
+    private function createLink(int $userId, int $buttonId, string $status = 'pending', string $title = 'My Link', ?string $submittedBy = null): int
     {
         return (int) DB::table('links')->insertGetId([
             'user_id' => $userId,
@@ -117,6 +118,7 @@ final class ModerationControllerTest extends TestCase
             'title' => $title,
             'button_id' => $buttonId,
             'type' => 'predefined',
+            'submitted_by' => $submittedBy,
             'status' => $status,
             'order' => 999,
             'created_at' => now(),
@@ -207,6 +209,48 @@ final class ModerationControllerTest extends TestCase
             ->get('/studio/moderation')
             ->assertViewIs('linkstack-shared-profiles::moderation.index')
             ->assertViewHas('links', fn ($links) => $links->count() === 1);
+    }
+
+    // -------------------------------------------------------------------------
+    // index() — submitter display
+    // -------------------------------------------------------------------------
+
+    public function testIndexShowsSubmitterUsername(): void
+    {
+        $user = $this->createUser();
+        $buttonId = $this->createButton();
+        $submitter = json_encode(['id' => 12345, 'first_name' => 'Alice', 'username' => 'alice_tg']);
+        $this->createLink($user->id, $buttonId, 'pending', 'My Link', $submitter);
+
+        $this->actingAs($user)
+            ->get('/studio/moderation')
+            ->assertStatus(200)
+            ->assertSee('@alice_tg');
+    }
+
+    public function testIndexShowsFirstNameWhenNoUsername(): void
+    {
+        $user = $this->createUser();
+        $buttonId = $this->createButton();
+        $submitter = json_encode(['id' => 12345, 'first_name' => 'Bob']);
+        $this->createLink($user->id, $buttonId, 'pending', 'My Link', $submitter);
+
+        $this->actingAs($user)
+            ->get('/studio/moderation')
+            ->assertStatus(200)
+            ->assertSee('Bob');
+    }
+
+    public function testIndexShowsDashWhenNoSubmitter(): void
+    {
+        $user = $this->createUser();
+        $buttonId = $this->createButton();
+        $this->createLink($user->id, $buttonId, 'pending', 'My Link', null);
+
+        $this->actingAs($user)
+            ->get('/studio/moderation')
+            ->assertStatus(200)
+            ->assertSee('—');
     }
 
     // -------------------------------------------------------------------------
