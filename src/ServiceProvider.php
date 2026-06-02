@@ -71,7 +71,7 @@ class ServiceProvider extends BaseServiceProvider
         // template renders and strips non-published links from the $links collection.
         View::composer('linkstack.linkstack', function ($view) {
             $raw = $view->getData()['links'] ?? [];
-            $links = collect(is_array($raw) ? $raw : []);
+            $links = collect($raw);
             $view->with('links', $links->filter(
                 fn ($link) => ! isset($link->status) || $link->status === 'published'
             ));
