@@ -31,9 +31,8 @@
                     <td><a href="{{ $link->link }}">{{ $link->link }}</a></td>
                     <td>{{ $link->button_name }}</td>
                     <td>
-                        @if ($link->submitted_by)
-                            @php $submitter = json_decode($link->submitted_by); @endphp
-                            {{ isset($submitter->username) ? '@'.$submitter->username : $submitter->first_name }}
+                        @if (! empty($link->submitter))
+                            {{ isset($link->submitter->username) ? '@'.$link->submitter->username : $link->submitter->first_name }}
                         @else
                             —
                         @endif
