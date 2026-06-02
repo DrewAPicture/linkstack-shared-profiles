@@ -40,7 +40,8 @@ class ModerationController extends Controller
         DB::table('links')
             ->where('id', $id)
             ->where('user_id', Auth::id())
-            ->update(['status' => 'rejected']);
+            ->where('status', 'pending')
+            ->delete();
 
         return back();
     }

@@ -265,7 +265,7 @@ final class ModerationControllerTest extends TestCase
     // reject() — status change
     // -------------------------------------------------------------------------
 
-    public function testRejectSetsPendingLinkToRejected(): void
+    public function testRejectDeletesPendingLink(): void
     {
         $user = $this->createUser();
         $buttonId = $this->createButton();
@@ -276,7 +276,7 @@ final class ModerationControllerTest extends TestCase
             ->post("/studio/moderation/{$linkId}/reject")
             ->assertRedirect('/studio/moderation');
 
-        $this->assertDatabaseHas('links', ['id' => $linkId, 'status' => 'rejected']);
+        $this->assertDatabaseMissing('links', ['id' => $linkId]);
     }
 
     public function testRejectDoesNotChangeAnotherUsersLink(): void
