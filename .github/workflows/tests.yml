@@ -33,7 +33,12 @@ jobs:
         run: composer require "laravel/framework:^9.0" "orchestra/testbench:^7.0" --no-update
 
       - name: Install dependencies
+        if: matrix.laravel != '9'
         run: composer install --prefer-dist --no-progress
+
+      - name: Install dependencies (Laravel 9 pinned)
+        if: matrix.laravel == '9'
+        run: composer update --prefer-dist --no-progress
 
       - name: Run tests
         run: composer test

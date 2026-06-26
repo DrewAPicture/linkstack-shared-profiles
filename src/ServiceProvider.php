@@ -70,6 +70,7 @@ class ServiceProvider extends BaseServiceProvider
         // scope cannot intercept it. This view composer fires just before the Blade
         // template renders and strips non-published links from the $links collection.
         View::composer('linkstack.linkstack', function ($view) {
+            /** @var array<int, \stdClass> $raw */
             $raw = $view->getData()['links'] ?? [];
             $links = collect($raw);
             $view->with('links', $links->filter(
